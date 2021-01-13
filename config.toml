@@ -1,0 +1,8 @@
+#Configuration file used in DEVELOPEMENT. 
+## NOTE: if you get this error: 
+# Near line 0 (last key parsed ''): bare keys cannot contain '\ufeff'
+# It is because this config.toml file is saved with BOM. Notepad does it, please use "save as.." with UTF-8 without BOM.
+
+DBPath="chart-info.db"
+DebugSQL=true
+
