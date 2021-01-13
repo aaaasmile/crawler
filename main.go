@@ -37,8 +37,11 @@ func main() {
 
 	//c.Visit("https://invido.it/")
 	//c.Visit("https://www.easycharts.at/index.asp?action=securities_chart&actionTypeID=0_2&typeID=99&id=tts-11057070&menuId=1&pathName=XTR%2EDBLCI+CO%2EO%2EY%2ESW%2E1CEOH")
-	if err := downloadFile("https://www.easycharts.at/getChart.asp?action=getChart&chartID=2BD8F3179A7535A822B51F6C72B0CAD80F40442A", "data/chart_01.png"); err != nil {
-		log.Println("Error on download file: ", err)
+	// if err := downloadFile("https://www.easycharts.at/getChart.asp?action=getChart&chartID=2BD8F3179A7535A822B51F6C72B0CAD80F40442A", "data/chart_01.png"); err != nil {
+	// 	log.Println("Error on download file: ", err)
+	// }
+	if err := sendChartMail(); err != nil {
+		log.Println("Error on sending mail: ", err)
 	}
 }
 
