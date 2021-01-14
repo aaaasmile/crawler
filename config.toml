@@ -5,4 +5,5 @@
 
 DBPath="chart-info.db"
 DebugSQL=true
+ChatServerURI="https://www.easycharts.at/"
 

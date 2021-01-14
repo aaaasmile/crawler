@@ -21,6 +21,25 @@ type Secret struct {
 	ClientSecret string
 	AuthToken    string
 	RefreshToken string
+	Email        string
+}
+
+func nullStrToStr(ci sql.NullString) string {
+	if ci.Valid {
+		v, _ := ci.Value()
+		if vv, ok := v.(string); ok {
+			return vv
+		}
+	}
+	return ""
+}
+
+func (sc *Secret) FromNullString(ci, cs, aut, rt, em sql.NullString) {
+	sc.ClientID = nullStrToStr(ci)
+	sc.ClientSecret = nullStrToStr(cs)
+	sc.AuthToken = nullStrToStr(aut)
+	sc.RefreshToken = nullStrToStr(rt)
+	sc.Email = nullStrToStr(em)
 }
 
 func (ld *LiteDB) OpenSqliteDatabase() error {
@@ -37,8 +56,8 @@ func (ld *LiteDB) OpenSqliteDatabase() error {
 	return nil
 }
 
-func (ld *LiteDB) FetchSecret(pageIx int, pageSize int) ([]Secret, error) {
-	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken
+func (ld *LiteDB) FetchSecret() ([]Secret, error) {
+	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email
 		  FROM secrets
 		  LIMIT 1;`
 	q = fmt.Sprintf(q)
@@ -51,13 +70,17 @@ func (ld *LiteDB) FetchSecret(pageIx int, pageSize int) ([]Secret, error) {
 		return nil, err
 	}
 
+	var ci, cs, aut, rt, em sql.NullString
+
 	defer rows.Close()
 	res := make([]Secret, 0)
 	for rows.Next() {
 		item := Secret{}
-		if err := rows.Scan(&item.ID, &item.ClientID, &item.ClientSecret, &item.AuthToken, &item.RefreshToken); err != nil {
+		if err := rows.Scan(&item.ID, &ci, &cs,
+			&aut, &rt, &em); err != nil {
 			return nil, err
 		}
+		item.FromNullString(ci, cs, aut, rt, em)
 		res = append(res, item)
 	}
 	return res, nil

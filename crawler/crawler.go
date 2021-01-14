@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aaaasmile/crawler/db"
-
 	"github.com/aaaasmile/crawler/conf"
+	"github.com/aaaasmile/crawler/db"
+	"github.com/aaaasmile/crawler/mail"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -28,6 +28,12 @@ func Start(configfile string) error {
 	if err := liteDB.OpenSqliteDatabase(); err != nil {
 		return err
 	}
+
+	mm := mail.NewMailSender(&liteDB)
+	if err := mm.SendEmail(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

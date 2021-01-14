@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	DBPath   string
-	DebugSQL bool
+	DBPath        string
+	DebugSQL      bool
+	ChatServerURI string
 }
 
 var Current = &Config{}
