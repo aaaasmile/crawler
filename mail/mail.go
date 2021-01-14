@@ -90,6 +90,8 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, ctx interface{}) err
 	msg.Write(mime)
 	msg.Write(partContent.Bytes())
 
+	fmt.Println("*** Message is: ", msg.String())
+
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
 
 	// if _, err := ms.GmailService.Users.Messages.Send("me", &message).Do(); err != nil {
