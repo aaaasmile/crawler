@@ -12,6 +12,7 @@ import (
 
 func main() {
 	var ver = flag.Bool("ver", false, "Prints the current version")
+	var simulate = flag.Bool("simulate", false, "Simulate email send")
 	var configfile = flag.String("config", "config.toml", "Configuration file path")
 	flag.Parse()
 
@@ -20,7 +21,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	crw := crawler.CrawlerOfChart{}
+	crw := crawler.CrawlerOfChart{
+		Simulate: *simulate,
+	}
 
 	if err := crw.Start(*configfile); err != nil {
 		panic(err)

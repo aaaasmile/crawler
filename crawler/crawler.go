@@ -18,8 +18,9 @@ import (
 )
 
 type CrawlerOfChart struct {
-	liteDB *db.LiteDB
-	list   []*idl.ChartInfo
+	liteDB   *db.LiteDB
+	list     []*idl.ChartInfo
+	Simulate bool
 }
 
 func (cc *CrawlerOfChart) Start(configfile string) error {
@@ -58,7 +59,7 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
 
-	mm, err := mail.NewMailSender(cc.liteDB)
+	mm, err := mail.NewMailSender(cc.liteDB, cc.Simulate)
 	if err != nil {
 		return err
 	}

@@ -18,13 +18,15 @@ import (
 
 type MailSender struct {
 	liteDB       *db.LiteDB
-	GmailService *gmail.Service
-	Secret       *db.Secret
+	gmailService *gmail.Service
+	secret       *db.Secret
+	simulate     bool
 }
 
-func NewMailSender(ld *db.LiteDB) (*MailSender, error) {
+func NewMailSender(ld *db.LiteDB, simulate bool) (*MailSender, error) {
 	ms := MailSender{
-		liteDB: ld,
+		liteDB:   ld,
+		simulate: simulate,
 	}
 	secr, err := ms.liteDB.FetchSecret()
 	if err != nil {
@@ -34,7 +36,7 @@ func NewMailSender(ld *db.LiteDB) (*MailSender, error) {
 	if len(secr) != 1 {
 		return nil, fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
 	}
-	ms.Secret = &secr[0]
+	ms.secret = &secr[0]
 	ms.oAuthGmailService()
 
 	return &ms, nil
@@ -43,15 +45,15 @@ func NewMailSender(ld *db.LiteDB) (*MailSender, error) {
 func (ms *MailSender) oAuthGmailService() {
 	log.Println("Authorize with oauth")
 	config := oauth2.Config{
-		ClientID:     ms.Secret.ClientID,
-		ClientSecret: ms.Secret.ClientSecret,
+		ClientID:     ms.secret.ClientID,
+		ClientSecret: ms.secret.ClientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  "http://localhost",
 	}
 
 	token := oauth2.Token{
-		AccessToken:  ms.Secret.AuthToken,
-		RefreshToken: ms.Secret.RefreshToken,
+		AccessToken:  ms.secret.AuthToken,
+		RefreshToken: ms.secret.RefreshToken,
 		TokenType:    "Bearer",
 		Expiry:       time.Now(),
 	}
@@ -63,8 +65,8 @@ func (ms *MailSender) oAuthGmailService() {
 		log.Printf("Unable to retrieve Gmail client: %v", err)
 	}
 
-	ms.GmailService = srv
-	if ms.GmailService != nil {
+	ms.gmailService = srv
+	if ms.gmailService != nil {
 		fmt.Println("Email service is initialized \n")
 	}
 }
@@ -83,7 +85,7 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, ctx interface{}) err
 
 	var message gmail.Message
 	msg := &bytes.Buffer{}
-	emailTo := []byte("To: " + ms.Secret.Email + "\r\n")
+	emailTo := []byte("To: " + ms.secret.Email + "\r\n")
 	mime := []byte("MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n")
 	msg.Write(emailTo)
 	msg.Write(partSubj.Bytes())
@@ -94,10 +96,14 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, ctx interface{}) err
 
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
 
-	// if _, err := ms.GmailService.Users.Messages.Send("me", &message).Do(); err != nil {
-	// 	return err
-	// }
+	if !ms.simulate {
+		if _, err := ms.gmailService.Users.Messages.Send("me", &message).Do(); err != nil {
+			return err
+		}
+		log.Println("E-Mail is on the way. Everything is going well.")
+	} else {
+		log.Println("Simulate Mail sent")
+	}
 
-	log.Println("E-Mail is on the way. Everything is going well.")
 	return nil
 }
