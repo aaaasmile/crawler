@@ -1,13 +1,16 @@
 package mail
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
+	"html/template"
 	"log"
 	"time"
 
 	"github.com/aaaasmile/crawler/db"
+	"github.com/aaaasmile/crawler/idl"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
@@ -27,19 +30,19 @@ func NewMailSender(ld *db.LiteDB) *MailSender {
 	return &res
 }
 
-func (ms *MailSender) SendEmail() error {
-	log.Println("Send email")
+func (ms *MailSender) SendEmail(list []*idl.ChartInfo) error {
+	log.Println("Send email with ", len(list))
 	secr, err := ms.liteDB.FetchSecret()
 	if err != nil {
 		return err
 	}
 	log.Println("Secrets: ", secr)
 	if len(secr) != 1 {
-		return fmt.Errorf("Secret is not inserted or is multiple. PLease check the db")
+		return fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
 	}
 	ms.Secret = &secr[0]
 	ms.oAuthGmailService()
-	ms.sendEmailOAUTH2()
+	ms.sendEmailOAUTH2(list)
 
 	return nil
 }
@@ -73,29 +76,37 @@ func (ms *MailSender) oAuthGmailService() {
 	}
 }
 
-func (ms *MailSender) sendEmailOAUTH2() (bool, error) {
+func (ms *MailSender) sendEmailOAUTH2(list []*idl.ChartInfo) error {
 	log.Println("Send e-mail with gmail service")
-	var err error
-	// emailBody, err := parseTemplate(template, data)
-	// if err != nil {
-	// 	return false, errors.New("unable to parse email template")
-	// }
-	emailBody := "Questa è una mail di charts"
+	templFileName := "templates/chart-mail.html"
 
-	var message gmail.Message
-
-	emailTo := "To: " + ms.Secret.Email + "\r\n"
-	subject := "Subject: " + "Test Email form Gmail API using OAuth" + "\n"
-	mime := "MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n"
-	msg := []byte(emailTo + subject + mime + "\n" + emailBody)
-
-	message.Raw = base64.URLEncoding.EncodeToString(msg)
-
-	// Send the message
-	_, err = ms.GmailService.Users.Messages.Send("me", &message).Do()
-	if err != nil {
-		return false, err
+	var partContent, partSubj bytes.Buffer
+	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
+	if err := tmplBodyMail.ExecuteTemplate(&partContent, "mailbody", ctx); err != nil {
+		return err
 	}
-	log.Println("E-Mail is on the way")
-	return true, nil
+	if err := tmplBodyMail.ExecuteTemplate(&partSubj, "mailSubj", ctx); err != nil {
+		return err
+	}
+
+	var err error
+	var message gmail.Message
+	msg := &bytes.Buffer{}
+	emailTo := []byte("To: " + ms.Secret.Email + "\r\n")
+	//subject := []byte("Subject: " + "Test Email form Gmail API using OAuth" + "\n")
+	mime := []byte("MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n")
+	//msg := []byte(emailTo + subject + mime + "\n")
+	msg.Write(emailTo)
+	msg.Write(partSubj.Bytes())
+	msg.Write(mime)
+	msg.Write(partContent.Bytes())
+
+	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
+
+	if _, err := ms.GmailService.Users.Messages.Send("me", &message).Do(); err != nil {
+		return err
+	}
+
+	log.Println("E-Mail is on the way. Everything is going well.")
+	return nil
 }
