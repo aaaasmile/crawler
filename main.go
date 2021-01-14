@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/aaaasmile/crawler/crawler"
+	"github.com/aaaasmile/live-omxctrl/web/idl"
 )
 
 func main() {
@@ -15,13 +16,15 @@ func main() {
 	flag.Parse()
 
 	if *ver {
-		fmt.Println("Crawler version 0.1.0")
+		fmt.Printf("%s  version %s", idl.Appname, idl.Buildnr)
 		os.Exit(0)
 	}
 
-	if err := crawler.Start(*configfile); err != nil {
+	crw := crawler.CrawlerOfChart{}
+
+	if err := crw.Start(*configfile); err != nil {
 		panic(err)
 	}
-	log.Println("That's it folks.")
+	log.Println("That's all folks.")
 	os.Exit(0)
 }

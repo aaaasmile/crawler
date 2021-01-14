@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/aaaasmile/crawler/db"
-	"github.com/aaaasmile/crawler/idl"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
@@ -23,28 +22,22 @@ type MailSender struct {
 	Secret       *db.Secret
 }
 
-func NewMailSender(ld *db.LiteDB) *MailSender {
-	res := MailSender{
+func NewMailSender(ld *db.LiteDB) (*MailSender, error) {
+	ms := MailSender{
 		liteDB: ld,
 	}
-	return &res
-}
-
-func (ms *MailSender) SendEmail(list []*idl.ChartInfo) error {
-	log.Println("Send email with ", len(list))
 	secr, err := ms.liteDB.FetchSecret()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Println("Secrets: ", secr)
 	if len(secr) != 1 {
-		return fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
+		return nil, fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
 	}
 	ms.Secret = &secr[0]
 	ms.oAuthGmailService()
-	ms.sendEmailOAUTH2(list)
 
-	return nil
+	return &ms, nil
 }
 
 func (ms *MailSender) oAuthGmailService() {
@@ -76,9 +69,8 @@ func (ms *MailSender) oAuthGmailService() {
 	}
 }
 
-func (ms *MailSender) sendEmailOAUTH2(list []*idl.ChartInfo) error {
+func (ms *MailSender) SendEmailOAUTH2(templFileName string, ctx interface{}) error {
 	log.Println("Send e-mail with gmail service")
-	templFileName := "templates/chart-mail.html"
 
 	var partContent, partSubj bytes.Buffer
 	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
@@ -89,13 +81,10 @@ func (ms *MailSender) sendEmailOAUTH2(list []*idl.ChartInfo) error {
 		return err
 	}
 
-	var err error
 	var message gmail.Message
 	msg := &bytes.Buffer{}
 	emailTo := []byte("To: " + ms.Secret.Email + "\r\n")
-	//subject := []byte("Subject: " + "Test Email form Gmail API using OAuth" + "\n")
 	mime := []byte("MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n")
-	//msg := []byte(emailTo + subject + mime + "\n")
 	msg.Write(emailTo)
 	msg.Write(partSubj.Bytes())
 	msg.Write(mime)
@@ -103,9 +92,9 @@ func (ms *MailSender) sendEmailOAUTH2(list []*idl.ChartInfo) error {
 
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
 
-	if _, err := ms.GmailService.Users.Messages.Send("me", &message).Do(); err != nil {
-		return err
-	}
+	// if _, err := ms.GmailService.Users.Messages.Send("me", &message).Do(); err != nil {
+	// 	return err
+	// }
 
 	log.Println("E-Mail is on the way. Everything is going well.")
 	return nil

@@ -11,26 +11,47 @@ import (
 
 	"github.com/aaaasmile/crawler/conf"
 	"github.com/aaaasmile/crawler/db"
+	"github.com/aaaasmile/crawler/idl"
 	"github.com/aaaasmile/crawler/mail"
 
 	"github.com/gocolly/colly/v2"
 )
 
-func Start(configfile string) error {
+type CrawlerOfChart struct {
+	liteDB *db.LiteDB
+	list   []*idl.ChartInfo
+}
+
+func (cc *CrawlerOfChart) Start(configfile string) error {
 	conf.ReadConfig(configfile)
 	log.Println("Configuration is read")
 
-	liteDB := db.LiteDB{
+	cc.list = make([]*idl.ChartInfo, 0)
+	cc.liteDB = &db.LiteDB{
 		DebugSQL:     conf.Current.DebugSQL,
 		SqliteDBPath: conf.Current.DBPath,
 	}
 
-	if err := liteDB.OpenSqliteDatabase(); err != nil {
+	if err := cc.liteDB.OpenSqliteDatabase(); err != nil {
 		return err
 	}
 
-	mm := mail.NewMailSender(&liteDB)
-	if err := mm.SendEmail(); err != nil {
+	cc.sendChartEmail()
+
+	return nil
+}
+
+func (cc *CrawlerOfChart) sendChartEmail() error {
+
+	log.Println("Send email with num of items", len(cc.list))
+
+	mm, err := mail.NewMailSender(cc.liteDB)
+	if err != nil {
+		return err
+	}
+
+	templFileName := "templates/chart-mail.html"
+	if err := mm.SendEmailOAUTH2(templFileName, cc.list); err != nil {
 		return err
 	}
 
