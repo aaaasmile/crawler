@@ -8,7 +8,7 @@ Hello friend,
 here a little summary of your portfolio.
 
 {{ range . }}
-{{.ImgURI}}
+<img src="cid:{{.Fname}}" alt="{{.Description}}" />
 {{.Description}}
 {{end}}
 

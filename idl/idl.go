@@ -6,6 +6,7 @@ var (
 )
 
 type ChartInfo struct {
-	ImgURI      string
+	Fname       string
+	Fullname    string
 	Description string
 }

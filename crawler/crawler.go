@@ -49,8 +49,8 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 
 func (cc *CrawlerOfChart) buildTheChartList() error {
 	cc.list = make([]*idl.ChartInfo, 0)
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", ImgURI: "data/chart_01.png"})
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 2", ImgURI: "data/chart_01.png"})
+	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", Fullname: "data/chart_01.png"})
+	//cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 2", ImgURI: "data/chart_01.png"})
 
 	return nil
 }
