@@ -80,10 +80,13 @@ func (ms *MailSender) oAuthGmailService() {
 func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
 	log.Println("Send e-mail with gmail service")
 
+	bound1 := "000000000000d22e8805b8e517cc" // TODO
+	bound2 := "000000000000d22e8605b8e517cb" // TODO
+
 	list := make([]*idl.ChartInfo, 0, len(listsrc))
 	imgBuf := &bytes.Buffer{}
 	for _, v := range listsrc {
-		if fname := embedImgFile(v.Fullname, imgBuf); fname != "" {
+		if fname := embedImgFile(v.Fullname, imgBuf, bound1); fname != "" {
 			v.Fname = fname
 			list = append(list, v)
 		} else {
@@ -91,12 +94,16 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 		}
 	}
 
-	var partContent, partSubj bytes.Buffer
+	var partHtmlContent, partSubj, partPlainContent bytes.Buffer
 	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
-	if err := tmplBodyMail.ExecuteTemplate(&partContent, "mailbody", list); err != nil {
+	if err := tmplBodyMail.ExecuteTemplate(&partHtmlContent, "mailbody", list); err != nil {
 		return err
 	}
 	if err := tmplBodyMail.ExecuteTemplate(&partSubj, "mailSubj", list); err != nil {
+		return err
+	}
+
+	if err := tmplBodyMail.ExecuteTemplate(&partPlainContent, "mailPlain", list); err != nil {
 		return err
 	}
 
@@ -105,11 +112,24 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	msg := &bytes.Buffer{}
 	msg.Write([]byte("MIME-version: 1.0;\r\n"))
 	partSubj.WriteTo(msg)
-	//msg.Write([]byte("\r\n"))
 	msg.Write([]byte("To: " + ms.secret.Email + "\r\n"))
-	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
-	partContent.WriteTo(msg)
+	msg.Write([]byte("Content-Type:  multipart/related; boundary=" + `"` + bound1 + `"` + "\r\n"))
 	msg.Write([]byte("\r\n"))
+
+	msg.Write([]byte("--" + bound1 + "\r\n"))
+	msg.Write([]byte("Content-Type:  multipart/alternative; boundary=" + `"` + bound2 + `"` + "\r\n"))
+	msg.Write([]byte("\r\n"))
+
+	msg.Write([]byte("--" + bound2 + "\r\n"))
+	msg.Write([]byte("Content-Type: text/plain; charset=\"UTF-8\"\r\n"))
+	partPlainContent.WriteTo(msg)
+	msg.Write([]byte("\r\n"))
+
+	msg.Write([]byte("--" + bound2 + "\r\n"))
+	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
+	partHtmlContent.WriteTo(msg)
+	msg.Write([]byte("\r\n"))
+	msg.Write([]byte("--" + bound2 + "--" + "\r\n"))
 	imgBuf.WriteTo(msg)
 
 	fmt.Println("*** Message is: ", msg.String())
@@ -128,7 +148,7 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	return nil
 }
 
-func embedImgFile(fullname string, w *bytes.Buffer) string {
+func embedImgFile(fullname string, w *bytes.Buffer, boundary string) string {
 	log.Println("Processing ", fullname)
 	if _, err := os.Stat(fullname); err != nil {
 		log.Println("File error on ", fullname, err)
@@ -146,8 +166,7 @@ func embedImgFile(fullname string, w *bytes.Buffer) string {
 		return ""
 	}
 
-	xname := "ii_kjxipppu0"                    // todo calculate
-	boundary := "000000000000d22e8805b8e517cc" // todo calculate
+	xname := "ii_kjxipppu0" // todo calculate
 	rawForm76 := formatRFCRawWithEnc64(raw)
 
 	mediaType := mime.TypeByExtension(extimg)

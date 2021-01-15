@@ -14,5 +14,15 @@ here a little summary of your portfolio.
 
 Enjoy,
 Igor
+{{- end}}
 
+{{define "mailPlain" -}}
+Hello friend,
+here a little summary of your portfolio (no image here).
+{{ range . }}
+{{.Description}}
+{{end}}
+
+Enjoy,
+Igor
 {{- end}}
