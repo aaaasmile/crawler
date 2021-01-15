@@ -3,17 +3,18 @@ Subject: Chart Depot
 {{end}}
 
 {{define "mailbody" -}}
-Hello friend,
+<div>Hello Friend,</div>
+<p>here a little summary of your portfolio.</p>
 
-here a little summary of your portfolio.
-
+<div>
 {{ range . }}
 <img src="cid:{{.Fname}}" alt="{{.Description}}" />
 {{.Description}}
 {{end}}
+</div>
 
-Enjoy,
-Igor
+<p>Enjoy,</p>
+<p>Igor</p>
 {{- end}}
 
 {{define "mailPlain" -}}

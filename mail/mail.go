@@ -78,7 +78,7 @@ func (ms *MailSender) oAuthGmailService() {
 }
 
 func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
-	log.Println("Send e-mail with gmail service")
+	log.Println("Send e-mail with gmail service using multipart")
 
 	bound1 := "000000000000d22e8805b8e517cc" // TODO
 	bound2 := "000000000000d22e8605b8e517cb" // TODO
@@ -94,9 +94,9 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 		}
 	}
 
-	var partHtmlContent, partSubj, partPlainContent bytes.Buffer
+	var partHTMLCont, partSubj, partPlainContent bytes.Buffer
 	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
-	if err := tmplBodyMail.ExecuteTemplate(&partHtmlContent, "mailbody", list); err != nil {
+	if err := tmplBodyMail.ExecuteTemplate(&partHTMLCont, "mailbody", list); err != nil {
 		return err
 	}
 	if err := tmplBodyMail.ExecuteTemplate(&partSubj, "mailSubj", list); err != nil {
@@ -127,12 +127,14 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 
 	msg.Write([]byte("--" + bound2 + "\r\n"))
 	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
-	partHtmlContent.WriteTo(msg)
+	partHTMLCont.WriteTo(msg)
 	msg.Write([]byte("\r\n"))
 	msg.Write([]byte("--" + bound2 + "--" + "\r\n"))
 	imgBuf.WriteTo(msg)
 
-	fmt.Println("*** Message is: ", msg.String())
+	if ms.simulate {
+		fmt.Printf("Message is: \n%s", msg.String())
+	}
 
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
 
@@ -166,7 +168,7 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string) string {
 		return ""
 	}
 
-	xname := "ii_kjxipppu0" // todo calculate
+	xname := "ii_kjxipppu0" // TODO calculate
 	rawForm76 := formatRFCRawWithEnc64(raw)
 
 	mediaType := mime.TypeByExtension(extimg)
