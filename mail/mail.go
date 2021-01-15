@@ -11,6 +11,7 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aaaasmile/crawler/db"
@@ -102,14 +103,14 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	var message gmail.Message
 
 	msg := &bytes.Buffer{}
-	emailTo := []byte("To: " + ms.secret.Email + "\r\n")
-	mime := []byte("MIME-version: 1.0;\n")
-	msg.Write(emailTo)
-	msg.Write(partSubj.Bytes())
-	msg.Write(mime)
+	msg.Write([]byte("MIME-version: 1.0;\r\n"))
+	partSubj.WriteTo(msg)
+	//msg.Write([]byte("\r\n"))
+	msg.Write([]byte("To: " + ms.secret.Email + "\r\n"))
+	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
+	partContent.WriteTo(msg)
+	msg.Write([]byte("\r\n"))
 	imgBuf.WriteTo(msg)
-	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\";\n\n"))
-	msg.Write(partContent.Bytes())
 
 	fmt.Println("*** Message is: ", msg.String())
 
@@ -138,41 +139,54 @@ func embedImgFile(fullname string, w *bytes.Buffer) string {
 		log.Println("Read file error: ", fullname, err)
 		return ""
 	}
-
 	fname := filepath.Base(fullname)
-	mediaType := mime.TypeByExtension(filepath.Ext(fname))
-	if mediaType == "" {
-		mediaType = "application/octet-stream"
+	extimg := strings.ToLower(filepath.Ext(fname))
+	if !strings.HasSuffix(extimg, "jpg") && !strings.HasSuffix(extimg, "png") {
+		log.Println("Image not supported ", extimg)
+		return ""
 	}
+
+	xname := "ii_kjxipppu0"                    // todo calculate
+	boundary := "000000000000d22e8805b8e517cc" // todo calculate
+	rawForm76 := formatRFCRawWithEnc64(raw)
+
+	mediaType := mime.TypeByExtension(extimg)
+	w.Write([]byte("--" + boundary + "\r\n"))
 	w.Write([]byte("Content-Type: " + mediaType + `; name="` + fname + `"` + "\r\n"))
-	w.Write([]byte("Content-Transfer-Encoding: Base64 \r\n"))
-	w.Write([]byte("Content-Disposition: inline" + `; name="` + fname + `"` + "\r\n"))
-	w.Write([]byte("Content-ID:" + "<" + fname + ">" + "\r\n"))
-	w.Write(Base64Encode(raw))
+	w.Write([]byte("Content-Disposition: attachment" + `; filename="` + fname + `"` + "\r\n"))
+	w.Write([]byte("Content-Transfer-Encoding: base64 \r\n"))
+	w.Write([]byte("X-Attachment-Id: " + xname + "\r\n"))
+	w.Write([]byte("Content-ID: <" + xname + ">" + "\r\n"))
 	w.Write([]byte("\r\n"))
+	rawForm76.WriteTo(w)
+	w.Write([]byte("\r\n"))
+	w.Write([]byte("--" + boundary + "--"))
 
-	return fname
-	// if _, ok := f.Header["Content-Transfer-Encoding"]; !ok {
-	// 		f.setHeader("Content-Transfer-Encoding", string(Base64))
-	// 	}
+	return xname
 
-	// 	if _, ok := f.Header["Content-Disposition"]; !ok {
-	// 		var disp string
-	// 		disp = "inline"
-	// 		f.setHeader("Content-Disposition", disp+`; filename="`+f.Name+`"`)
-	// 	}
-
-	// 	if !isAttachment {
-	// 		if _, ok := f.Header["Content-ID"]; !ok {
-	// 			f.setHeader("Content-ID", "<"+f.Name+">")
-	// 		}
-	// 	}
-	// 	w.writeHeaders(f.Header)
-	// 	w.writeBody(f.CopyFunc, Base64)
-	// }
 }
 
-func Base64Encode(message []byte) []byte {
+func formatRFCRawWithEnc64(raw []byte) *bytes.Buffer {
+	//  RFC 2045 formatting to 76 col
+	maxLineLen := 76
+	p := base64Encode(raw)
+	w := &bytes.Buffer{}
+	n := 0
+	lineLen := 0
+	for len(p)+lineLen > maxLineLen {
+		w.Write(p[:maxLineLen-lineLen])
+		w.Write([]byte("\r\n"))
+		p = p[maxLineLen-lineLen:]
+		n += maxLineLen - lineLen
+		lineLen = 0
+	}
+	w.Write(p)
+	log.Println("Buffer size: ", n+len(p))
+
+	return w
+}
+
+func base64Encode(message []byte) []byte {
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(message)))
 	base64.StdEncoding.Encode(b, message)
 	return b
