@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS "secrets" (
 	"clientsecret"	TEXT,
 	"authtoken"	TEXT,
 	"refreshtoken"	TEXT,
+	"email"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 DROP TABLE IF EXISTS "stockinfo";
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "stockinfo" (
 	"charturl"	TEXT,
 	"name"	TEXT,
 	"description"	TEXT,
+	"moreinfourl"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 COMMIT;

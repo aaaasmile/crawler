@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/aaaasmile/crawler/conf"
 	"github.com/aaaasmile/crawler/db"
@@ -28,6 +29,7 @@ type InfoChart struct {
 	FileDst string
 	Text    string
 	Alt     string
+	Ix      int
 }
 
 func (cc *CrawlerOfChart) Start(configfile string) error {
@@ -55,6 +57,7 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 }
 
 func (cc *CrawlerOfChart) buildTheChartList() error {
+	start := time.Now()
 	cc.list = make([]*idl.ChartInfo, 0)
 	stockList, err := cc.liteDB.FetchStockInfo(2)
 	if err != nil {
@@ -62,14 +65,43 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	}
 
 	chRes := make(chan *InfoChart)
+	mapStock := make(map[int]*db.StockInfo)
 	for _, v := range stockList {
+		mapStock[v.ID] = v
 		go pickPicture(v.ChartURL, v.ID, chRes)
 	}
 
+	chTimeout := make(chan struct{})
+	timeout := 120 * time.Second
+	time.AfterFunc(timeout, func() {
+		chTimeout <- struct{}{}
+	})
+
 	var res *InfoChart
-	for range stockList {
-		res = <-chRes
+	counter := len(stockList)
+	select {
+	case res = <-chRes:
+		cc.list = append(cc.list, &idl.ChartInfo{
+			HasError:    res.Error != nil,
+			ErrorText:   res.Error.Error(),
+			Alt:         res.Alt,
+			Description: mapStock[res.Ix].Description,
+			MoreInfoURL: mapStock[res.Ix].MoreInfoURL,
+			Fname:       mapStock[res.Ix].Name,
+		})
+		counter--
+		if counter <= 0 {
+			break
+		}
+	case <-chTimeout:
+		log.Println("Timeout on shutdown, something was blockd")
+		cc.list = append(cc.list, &idl.ChartInfo{HasError: true, ErrorText: "Timeout on fetching chart"})
+		break
 	}
+	t := time.Now()
+	elapsed := t.Sub(start)
+	log.Printf("Fetchart total call duration: %v\n", elapsed)
+
 	return nil
 }
 
@@ -113,6 +145,7 @@ func pickPicture(URL string, ix int, chItem chan *InfoChart) error {
 				Alt:     alt,
 				Text:    e.Text,
 				FileDst: fileNameDst,
+				Ix:      ix,
 			}
 			found = true
 			chItem <- &item
@@ -122,26 +155,27 @@ func pickPicture(URL string, ix int, chItem chan *InfoChart) error {
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
-	c.OnScraped(func(e *colly.Response) {
-		log.Println("Terminate request scrap")
-		if !found {
-			log.Println("Chart image not recognized")
-			item := InfoChart{
-				Error: fmt.Errorf("Chart not recognized on %s", URL),
-			}
-			chItem <- &item
-		}
-	})
 	c.OnError(func(e *colly.Response, err error) {
 		log.Println("Error on scrap", err)
 		if !found {
 			log.Println("Chart image error")
 			item := InfoChart{
 				Error: err,
+				Ix:    ix,
 			}
 			chItem <- &item
 		}
 	})
+
+	log.Println("Terminate request scrap")
+	if !found {
+		log.Println("Chart image not recognized")
+		item := InfoChart{
+			Error: fmt.Errorf("Chart not recognized on %s", URL),
+			Ix:    ix,
+		}
+		chItem <- &item
+	}
 
 	return nil
 }

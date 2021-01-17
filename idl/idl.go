@@ -9,4 +9,8 @@ type ChartInfo struct {
 	Fname       string
 	Fullname    string
 	Description string
+	HasError    bool
+	ErrorText   string
+	Alt         string
+	MoreInfoURL string
 }

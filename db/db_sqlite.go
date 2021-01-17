@@ -42,6 +42,23 @@ func (sc *Secret) FromNullString(ci, cs, aut, rt, em sql.NullString) {
 	sc.Email = nullStrToStr(em)
 }
 
+type StockInfo struct {
+	ID          int
+	ISIN        string
+	ChartURL    string
+	Name        string
+	Description string
+	MoreInfoURL string
+}
+
+func (si *StockInfo) FromNullString(isin, cu, na, des, mor sql.NullString) {
+	si.ISIN = nullStrToStr(isin)
+	si.ChartURL = nullStrToStr(cu)
+	si.Name = nullStrToStr(na)
+	si.Description = nullStrToStr(des)
+	si.MoreInfoURL = nullStrToStr(mor)
+}
+
 func (ld *LiteDB) OpenSqliteDatabase() error {
 	var err error
 	dbname := ld.SqliteDBPath
@@ -82,6 +99,36 @@ func (ld *LiteDB) FetchSecret() ([]Secret, error) {
 		}
 		item.FromNullString(ci, cs, aut, rt, em)
 		res = append(res, item)
+	}
+	return res, nil
+}
+
+func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
+	q := `SELECT id,isin,charturl,name,description,moreinfourl
+		  FROM stockinfo
+		  LIMIT %d;`
+	q = fmt.Sprintf(q, limit)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+
+	rows, err := ld.connDb.Query(q)
+	if err != nil {
+		return nil, err
+	}
+
+	var isin, cu, na, des, mor sql.NullString
+
+	defer rows.Close()
+	res := make([]*StockInfo, 0)
+	for rows.Next() {
+		item := StockInfo{}
+		if err := rows.Scan(&item.ID, &isin, &cu,
+			&na, &des, &mor); err != nil {
+			return nil, err
+		}
+		item.FromNullString(isin, cu, na, des, mor)
+		res = append(res, &item)
 	}
 	return res, nil
 }

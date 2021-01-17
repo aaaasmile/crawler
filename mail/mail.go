@@ -86,20 +86,38 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	bound1 := randomBoundary()
 	bound2 := randomBoundary()
 
-	list := make([]*idl.ChartInfo, 0, len(listsrc))
+	list := make([]*idl.ChartInfo, 0)
+	listErr := make([]*idl.ChartInfo, 0)
 	imgBuf := &bytes.Buffer{}
-	for ix, v := range listsrc {
-		if fname := embedImgFile(v.Fullname, imgBuf, bound1, (ix == len(listsrc)-1)); fname != "" {
+	for _, v := range listsrc {
+		if v.Fullname == "" || v.HasError || v.ErrorText != "" {
+			listErr = append(list, v)
+			continue
+		}
+		fname, err := embedImgFile(v.Fullname, imgBuf, bound1)
+		if err != nil {
+			log.Println("Ignore image ", v, err)
+			listErr = append(list, v)
+		} else {
 			v.Fname = fname
 			list = append(list, v)
-		} else {
-			log.Println("Ignore image ", v)
 		}
+	}
+	if len(list) > 0 {
+		imgBuf.Write([]byte("--" + bound1 + "--"))
+	}
+
+	ctx := struct {
+		ListOK  []*idl.ChartInfo
+		ListErr []*idl.ChartInfo
+	}{
+		ListOK:  list,
+		ListErr: listErr,
 	}
 
 	var partHTMLCont, partSubj, partPlainContent bytes.Buffer
 	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
-	if err := tmplBodyMail.ExecuteTemplate(&partHTMLCont, "mailbody", list); err != nil {
+	if err := tmplBodyMail.ExecuteTemplate(&partHTMLCont, "mailbody", ctx); err != nil {
 		return err
 	}
 	if err := tmplBodyMail.ExecuteTemplate(&partSubj, "mailSubj", list); err != nil {
@@ -157,22 +175,22 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	return nil
 }
 
-func embedImgFile(fullname string, w *bytes.Buffer, boundary string, islast bool) string {
+func embedImgFile(fullname string, w *bytes.Buffer, boundary string) (string, error) {
 	log.Println("Processing ", fullname)
 	if _, err := os.Stat(fullname); err != nil {
 		log.Println("File error on ", fullname, err)
-		return ""
+		return "", err
 	}
 	raw, err := ioutil.ReadFile(fullname)
 	if err != nil {
 		log.Println("Read file error: ", fullname, err)
-		return ""
+		return "", err
 	}
 	fname := filepath.Base(fullname)
 	extimg := strings.ToLower(filepath.Ext(fname))
 	if !strings.HasSuffix(extimg, "jpg") && !strings.HasSuffix(extimg, "png") {
 		log.Println("Image not supported ", extimg)
-		return ""
+		return "", err
 	}
 
 	xname := fmt.Sprintf("ii_kj%s", randomIdAscii(8))
@@ -188,10 +206,8 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string, islast bool
 	w.Write([]byte("\r\n"))
 	rawForm76.WriteTo(w)
 	w.Write([]byte("\r\n"))
-	if islast {
-		w.Write([]byte("--" + boundary + "--"))
-	}
-	return xname
+
+	return xname, nil
 
 }
 
