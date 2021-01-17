@@ -49,12 +49,15 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 
 func (cc *CrawlerOfChart) buildTheChartList() error {
 	cc.list = make([]*idl.ChartInfo, 0)
+	// TODO: read all urls in the db and foreach url call
+	return nil
+}
+
+func (cc *CrawlerOfChart) fillWithSomeDummy() {
 	// example without the crawler
 	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", Fullname: "data/chart_01.png"})
 	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", Fullname: "data/chart_01.png"})
 	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", Fullname: "data/chart_01.png"})
-
-	return nil
 }
 
 func (cc *CrawlerOfChart) sendChartEmail() error {
@@ -74,7 +77,7 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	return nil
 }
 
-func pickPicture(URL string) error {
+func pickPicture(URL string, ix int) error {
 	c := colly.NewCollector()
 
 	// On every a element which has href attribute call callback
@@ -83,12 +86,12 @@ func pickPicture(URL string) error {
 		alt := e.Attr("alt")
 		// Print link
 		if strings.HasPrefix(link, "getChart") {
+			fileNameDst := fmt.Sprintf("data/chart_%d.png", ix)
 			fmt.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
+			if err := downloadFile(conf.Current.ChatServerURI+link, fileNameDst); err != nil {
+				log.Println("Error on download file: ", err)
+			}
 		}
-
-		// Visit link found on page
-		// Only those links are visited which are in AllowedDomains
-		//c.Visit(e.Request.AbsoluteURL(link))
 	})
 
 	// Before making a request print "Visiting ..."
