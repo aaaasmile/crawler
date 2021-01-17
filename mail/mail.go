@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	mathrand "math/rand"
 	"mime"
 	"os"
 	"path/filepath"
@@ -189,10 +190,7 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string, islast bool
 	w.Write([]byte("\r\n"))
 	if islast {
 		w.Write([]byte("--" + boundary + "--"))
-	} else {
-		w.Write([]byte("--" + boundary))
 	}
-
 	return xname
 
 }
@@ -242,8 +240,7 @@ func randomIdAscii(size int) string {
 	}
 	buf := make([]byte, 0)
 	for i := 0; i < size; i++ {
-		//ixrnd := rand.Intn(len(set))
-		ixrnd := 12
+		ixrnd := mathrand.Intn(len(set))
 		buf = append(buf, byte(set[ixrnd]))
 	}
 	return string(buf)

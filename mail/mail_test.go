@@ -5,5 +5,8 @@ import (
 )
 
 func TestRandomIdAscii(t *testing.T) {
-	t.Error(randomIdAscii(8))
+	res := randomIdAscii(8)
+	if len(res) != 8 {
+		t.Error("Result is not 8 size", res)
+	}
 }
