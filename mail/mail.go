@@ -3,9 +3,11 @@ package mail
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -73,20 +75,20 @@ func (ms *MailSender) oAuthGmailService() {
 
 	ms.gmailService = srv
 	if ms.gmailService != nil {
-		fmt.Println("Email service is initialized \n")
+		fmt.Println("Email service is initialized")
 	}
 }
 
 func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
 	log.Println("Send e-mail with gmail service using multipart")
 
-	bound1 := "000000000000d22e8805b8e517cc" // TODO
-	bound2 := "000000000000d22e8605b8e517cb" // TODO
+	bound1 := randomBoundary()
+	bound2 := randomBoundary()
 
 	list := make([]*idl.ChartInfo, 0, len(listsrc))
 	imgBuf := &bytes.Buffer{}
-	for _, v := range listsrc {
-		if fname := embedImgFile(v.Fullname, imgBuf, bound1); fname != "" {
+	for ix, v := range listsrc {
+		if fname := embedImgFile(v.Fullname, imgBuf, bound1, (ix == len(listsrc)-1)); fname != "" {
 			v.Fname = fname
 			list = append(list, v)
 		} else {
@@ -120,16 +122,20 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	msg.Write([]byte("Content-Type:  multipart/alternative; boundary=" + `"` + bound2 + `"` + "\r\n"))
 	msg.Write([]byte("\r\n"))
 
+	// plain section
 	msg.Write([]byte("--" + bound2 + "\r\n"))
 	msg.Write([]byte("Content-Type: text/plain; charset=\"UTF-8\"\r\n"))
 	partPlainContent.WriteTo(msg)
 	msg.Write([]byte("\r\n"))
 
+	// html section
 	msg.Write([]byte("--" + bound2 + "\r\n"))
 	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
 	partHTMLCont.WriteTo(msg)
 	msg.Write([]byte("\r\n"))
 	msg.Write([]byte("--" + bound2 + "--" + "\r\n"))
+
+	// embedded images section
 	imgBuf.WriteTo(msg)
 
 	if ms.simulate {
@@ -150,7 +156,7 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	return nil
 }
 
-func embedImgFile(fullname string, w *bytes.Buffer, boundary string) string {
+func embedImgFile(fullname string, w *bytes.Buffer, boundary string, islast bool) string {
 	log.Println("Processing ", fullname)
 	if _, err := os.Stat(fullname); err != nil {
 		log.Println("File error on ", fullname, err)
@@ -168,7 +174,7 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string) string {
 		return ""
 	}
 
-	xname := "ii_kjxipppu0" // TODO calculate
+	xname := fmt.Sprintf("ii_kj%s", randomIdAscii(8))
 	rawForm76 := formatRFCRawWithEnc64(raw)
 
 	mediaType := mime.TypeByExtension(extimg)
@@ -181,7 +187,11 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string) string {
 	w.Write([]byte("\r\n"))
 	rawForm76.WriteTo(w)
 	w.Write([]byte("\r\n"))
-	w.Write([]byte("--" + boundary + "--"))
+	if islast {
+		w.Write([]byte("--" + boundary + "--"))
+	} else {
+		w.Write([]byte("--" + boundary))
+	}
 
 	return xname
 
@@ -211,4 +221,30 @@ func base64Encode(message []byte) []byte {
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(message)))
 	base64.StdEncoding.Encode(b, message)
 	return b
+}
+
+func randomBoundary() string {
+	var buf [30]byte
+	_, err := io.ReadFull(rand.Reader, buf[:])
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", buf[:])
+}
+
+func randomIdAscii(size int) string {
+	set := make([]int, 0)
+	for i := 48; i < 58; i++ {
+		set = append(set, i)
+	}
+	for i := 97; i < 123; i++ {
+		set = append(set, i)
+	}
+	buf := make([]byte, 0)
+	for i := 0; i < size; i++ {
+		//ixrnd := rand.Intn(len(set))
+		ixrnd := 12
+		buf = append(buf, byte(set[ixrnd]))
+	}
+	return string(buf)
 }
