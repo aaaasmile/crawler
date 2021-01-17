@@ -23,6 +23,13 @@ type CrawlerOfChart struct {
 	Simulate bool
 }
 
+type InfoChart struct {
+	Error   error
+	FileDst string
+	Text    string
+	Alt     string
+}
+
 func (cc *CrawlerOfChart) Start(configfile string) error {
 	conf.ReadConfig(configfile)
 	log.Println("Configuration is read")
@@ -49,7 +56,20 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 
 func (cc *CrawlerOfChart) buildTheChartList() error {
 	cc.list = make([]*idl.ChartInfo, 0)
-	// TODO: read all urls in the db and foreach url call
+	stockList, err := cc.liteDB.FetchStockInfo(2)
+	if err != nil {
+		return err
+	}
+
+	chRes := make(chan *InfoChart)
+	for _, v := range stockList {
+		go pickPicture(v.ChartURL, v.ID, chRes)
+	}
+
+	var res *InfoChart
+	for range stockList {
+		res = <-chRes
+	}
 	return nil
 }
 
@@ -77,36 +97,51 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	return nil
 }
 
-func pickPicture(URL string, ix int) error {
+func pickPicture(URL string, ix int, chItem chan *InfoChart) error {
 	c := colly.NewCollector()
-
+	found := false
 	// On every a element which has href attribute call callback
 	c.OnHTML("img[src]", func(e *colly.HTMLElement) {
 		link := e.Attr("src")
 		alt := e.Attr("alt")
-		// Print link
 		if strings.HasPrefix(link, "getChart") {
 			fileNameDst := fmt.Sprintf("data/chart_%d.png", ix)
-			fmt.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
-			if err := downloadFile(conf.Current.ChatServerURI+link, fileNameDst); err != nil {
-				log.Println("Error on download file: ", err)
+			log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
+			err := downloadFile(conf.Current.ChatServerURI+link, fileNameDst)
+			item := InfoChart{
+				Error:   err,
+				Alt:     alt,
+				Text:    e.Text,
+				FileDst: fileNameDst,
 			}
+			found = true
+			chItem <- &item
 		}
 	})
 
-	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
-
-	//c.Visit("https://invido.it/")
-	//c.Visit("https://www.easycharts.at/index.asp?action=securities_chart&actionTypeID=0_2&typeID=99&id=tts-11057070&menuId=1&pathName=XTR%2EDBLCI+CO%2EO%2EY%2ESW%2E1CEOH")
-	// if err := downloadFile("https://www.easycharts.at/getChart.asp?action=getChart&chartID=2BD8F3179A7535A822B51F6C72B0CAD80F40442A", "data/chart_01.png"); err != nil {
-	// 	log.Println("Error on download file: ", err)
-	// }
-	// if err := sendChartMail(); err != nil {
-	// 	log.Println("Error on sending mail: ", err)
-	// }
+	c.OnScraped(func(e *colly.Response) {
+		log.Println("Terminate request scrap")
+		if !found {
+			log.Println("Chart image not recognized")
+			item := InfoChart{
+				Error: fmt.Errorf("Chart not recognized on %s", URL),
+			}
+			chItem <- &item
+		}
+	})
+	c.OnError(func(e *colly.Response, err error) {
+		log.Println("Error on scrap", err)
+		if !found {
+			log.Println("Chart image error")
+			item := InfoChart{
+				Error: err,
+			}
+			chItem <- &item
+		}
+	})
 
 	return nil
 }
