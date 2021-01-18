@@ -27,6 +27,7 @@ type CrawlerOfChart struct {
 type InfoChart struct {
 	Error   error
 	FileDst string
+	Link    string
 	Text    string
 	Alt     string
 	Ix      int
@@ -81,34 +82,45 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 
 	var res *InfoChart
 	counter := len(stockList)
-	select {
-	case res = <-chRes:
-		newEle := idl.ChartInfo{
-			HasError:         res.Error != nil,
-			CurrentPrice:     res.Alt,
-			DownloadFilename: res.FileDst,
+
+loop:
+	for {
+		select {
+		case res = <-chRes:
+			newEle := idl.ChartInfo{}
+			err := downloadFile(conf.Current.ChatServerURI+res.Link, res.FileDst)
+			if err != nil {
+				log.Println("Downloading image error")
+				newEle.HasError = true
+				newEle.ErrorText = err.Error()
+			} else {
+				newEle.HasError = res.Error != nil
+				if res.Error != nil {
+					newEle.ErrorText = res.Error.Error()
+				}
+			}
+
+			if v, ok := mapStock[res.Ix]; ok {
+				newEle.Description = v.Description
+				newEle.MoreInfoURL = v.MoreInfoURL
+			}
+
+			cc.list = append(cc.list, &newEle)
+			log.Println("Append a new chart with ", res.FileDst, res.Ix, counter)
+			counter--
+			if counter <= 0 {
+				log.Println("All images are donwloaded")
+				break loop
+			}
+		case <-chTimeout:
+			log.Println("Timeout on shutdown, something was blocked")
+			cc.list = append(cc.list, &idl.ChartInfo{HasError: true, ErrorText: "Timeout on fetching chart"})
+			break loop
 		}
-		if res.Error != nil {
-			newEle.ErrorText = res.Error.Error()
-		}
-		if v, ok := mapStock[res.Ix]; ok {
-			newEle.Description = v.Description
-			newEle.MoreInfoURL = v.MoreInfoURL
-		}
-		cc.list = append(cc.list, &newEle)
-		log.Println("Append a new chart with ", res.FileDst, res.Ix, counter)
-		counter--
-		if counter <= 0 {
-			break
-		}
-	case <-chTimeout:
-		log.Println("Timeout on shutdown, something was blockd")
-		cc.list = append(cc.list, &idl.ChartInfo{HasError: true, ErrorText: "Timeout on fetching chart"})
-		break
 	}
 	t := time.Now()
 	elapsed := t.Sub(start)
-	log.Printf("Fetchart total call duration: %v\n", elapsed)
+	log.Printf("Fetchart items %d total call duration: %v\n", len(cc.list), elapsed)
 
 	return nil
 }
@@ -148,13 +160,9 @@ func pickPicture(URL string, ix int, chItem chan *InfoChart) {
 		if strings.HasPrefix(link, "getChart") {
 			fileNameDst := fmt.Sprintf("data/chart_%d.png", ix)
 			log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
-			err := downloadFile(conf.Current.ChatServerURI+link, fileNameDst)
-			if err != nil {
-				log.Println("Downloading image error")
-			}
 			item := InfoChart{
-				Error:   err,
 				Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
+				Link:    link,
 				Text:    e.Text,
 				FileDst: fileNameDst,
 				Ix:      ix,
