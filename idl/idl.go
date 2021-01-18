@@ -6,11 +6,11 @@ var (
 )
 
 type ChartInfo struct {
-	Fname       string
-	Fullname    string
-	Description string
-	HasError    bool
-	ErrorText   string
-	Alt         string
-	MoreInfoURL string
+	DownloadFilename string
+	ImgName          string
+	CurrentPrice     string
+	HasError         bool
+	ErrorText        string
+	Description      string
+	MoreInfoURL      string
 }

@@ -7,11 +7,18 @@ Subject: Chart Depot
 <p>here a little summary of your portfolio.</p>
 
 <div>
-{{ range . }}
-<div>{{.Description}}</div>
-<img src="cid:{{.Fname}}" alt="{{.Description}}" />
-{{end}}
+    {{ range .ListOK }}
+    <div>{{.Description}}</div>
+    <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
+    {{end}}
 </div>
+
+<div>
+    {{ range .ListErr }}
+    <div>{{.ErrorText}}</div>
+    {{end}}
+</div>
+
 
 <p>Enjoy,</p>
 <p>Igor</p>
@@ -19,7 +26,7 @@ Subject: Chart Depot
 
 {{define "mailPlain" -}}
 Hello friend,
-here a little summary of your portfolio (no image here).
+here a little summary of your portfolio without images.
 {{ range . }}
 {{.Description}}
 {{end}}

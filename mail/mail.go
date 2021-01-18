@@ -81,7 +81,7 @@ func (ms *MailSender) oAuthGmailService() {
 }
 
 func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
-	log.Println("Send e-mail with gmail service using multipart")
+	log.Println("Send e-mail with gmail service using multipart. Charts: ", len(listsrc))
 
 	bound1 := randomBoundary()
 	bound2 := randomBoundary()
@@ -90,22 +90,25 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 	listErr := make([]*idl.ChartInfo, 0)
 	imgBuf := &bytes.Buffer{}
 	for _, v := range listsrc {
-		if v.Fullname == "" || v.HasError || v.ErrorText != "" {
+		if v.DownloadFilename == "" || v.HasError || v.ErrorText != "" {
+			log.Println("Wrong img: ", v)
 			listErr = append(list, v)
 			continue
 		}
-		fname, err := embedImgFile(v.Fullname, imgBuf, bound1)
+		fname, err := embedImgFile(v.DownloadFilename, imgBuf, bound1)
 		if err != nil {
 			log.Println("Ignore image ", v, err)
+			v.ErrorText = err.Error()
 			listErr = append(list, v)
 		} else {
-			v.Fname = fname
+			v.ImgName = fname
 			list = append(list, v)
 		}
 	}
 	if len(list) > 0 {
 		imgBuf.Write([]byte("--" + bound1 + "--"))
 	}
+	log.Println("Images ok/err", len(list), len(listErr))
 
 	ctx := struct {
 		ListOK  []*idl.ChartInfo
