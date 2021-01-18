@@ -19,4 +19,14 @@ CREATE TABLE IF NOT EXISTS "stockinfo" (
 	"moreinfourl"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+DROP TABLE IF EXISTS "operation";
+CREATE TABLE IF NOT EXISTS "operation" (
+	"id"	INTEGER NOT NULL,
+	"unit"	INTEGER NOT NULL,
+	"priceunit"	REAL,
+	"pricetotal"	REAL,
+	"isin"	TEXT,
+	"timestamp"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
 COMMIT;
