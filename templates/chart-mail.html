@@ -9,13 +9,18 @@ Subject: Chart Depot
 <div>
     {{ range .ListOK }}
     <div>{{.Description}}</div>
+    <div>{{.CurrentPrice}}</div>
     <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
+    <div><a href="{{.ChartURL}}">go to chart</a></div>
+    <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
+    <hr>
     {{end}}
 </div>
 
 <div>
     {{ range .ListErr }}
     <div>{{.ErrorText}}</div>
+    <div>{{.Description}}</div>
     {{end}}
 </div>
 

@@ -13,4 +13,5 @@ type ChartInfo struct {
 	ErrorText        string
 	Description      string
 	MoreInfoURL      string
+	ChartURL         string
 }

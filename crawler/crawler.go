@@ -61,7 +61,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	log.Println("Build the chart list")
 	start := time.Now()
 	cc.list = make([]*idl.ChartInfo, 0)
-	stockList, err := cc.liteDB.FetchStockInfo(2)
+	stockList, err := cc.liteDB.FetchStockInfo(100)
 	if err != nil {
 		return err
 	}
@@ -87,25 +87,29 @@ loop:
 	for {
 		select {
 		case res = <-chRes:
-			newEle := idl.ChartInfo{}
+			chartItem := idl.ChartInfo{}
 			err := downloadFile(conf.Current.ChatServerURI+res.Link, res.FileDst)
 			if err != nil {
 				log.Println("Downloading image error")
-				newEle.HasError = true
-				newEle.ErrorText = err.Error()
+				chartItem.HasError = true
+				chartItem.ErrorText = err.Error()
 			} else {
-				newEle.HasError = res.Error != nil
+				chartItem.HasError = res.Error != nil
 				if res.Error != nil {
-					newEle.ErrorText = res.Error.Error()
+					chartItem.ErrorText = res.Error.Error()
+				} else {
+					chartItem.DownloadFilename = res.FileDst
+					chartItem.CurrentPrice = res.Alt
 				}
 			}
 
 			if v, ok := mapStock[res.Ix]; ok {
-				newEle.Description = v.Description
-				newEle.MoreInfoURL = v.MoreInfoURL
+				chartItem.Description = v.Description
+				chartItem.MoreInfoURL = v.MoreInfoURL
+				chartItem.ChartURL = v.ChartURL
 			}
 
-			cc.list = append(cc.list, &newEle)
+			cc.list = append(cc.list, &chartItem)
 			log.Println("Append a new chart with ", res.FileDst, res.Ix, counter)
 			counter--
 			if counter <= 0 {
