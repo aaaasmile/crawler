@@ -128,7 +128,7 @@ loop:
 			} else {
 				chartItem.DownloadFilename = res.FileDst
 				chartItem.CurrentPrice = res.Alt
-				chartItem.PriceInfo = parseForPriceInfo(res.Alt)
+				chartItem.PriceInfo, _ = parseForPriceInfo(res.Alt)
 			}
 
 			if v, ok := mapStock[res.ID]; ok {
@@ -268,46 +268,46 @@ func downloadFile(URL, fileName string) error {
 	return nil
 }
 
-func parseForPriceInfo(alt string) *db.Price {
+func parseForPriceInfo(alt string) (*db.Price, error) {
 	// alt is something like: IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
 	arr := strings.Split(alt, "-")
 	if len(arr) != 2 {
-		return nil
+		return nil, fmt.Errorf("Expect one dash")
 	}
 	item := arr[1]
 	arr = strings.Split(item, ":")
 	if len(arr) != 3 {
-		return nil
+		return nil, fmt.Errorf("Expect 2 ':'")
 	}
-	item = strings.Join(arr[1:], "")
+	item = strings.Join(arr[1:], ":")
 	item = strings.Trim(item, " ") //16,34 (15.01. / 17:36)
 
 	arr = strings.Split(item, " ")
 	if len(arr) < 1 {
-		return nil
+		return nil, fmt.Errorf("Expect date and time with space separation")
 	}
 	pricestr := arr[0] //16,34
-	price, err := strconv.ParseFloat(pricestr, 32)
+	pricestr = strings.Replace(pricestr, ",", ".", 1)
+	price, err := strconv.ParseFloat(pricestr, 64)
 	if err != nil {
-		log.Println("Warning price not parsed: ", err)
-		return nil
+		return nil, err
 	}
 
-	datestr := strings.Join(arr[1:], "")
+	datestr := strings.Join(arr[1:], " ")
 	datestr = strings.Trim(datestr, "(")
 	datestr = strings.Trim(datestr, ")") //15.01. / 17:36
 	arr = strings.Split(datestr, "/")
 	if len(arr) != 2 {
-		return nil
+		return nil, fmt.Errorf("Expected one / separator")
 	}
 	datestr = arr[0] //15.01.
 	pparr := strings.Split(datestr, ".")
 	if len(pparr) != 3 {
-		return nil
+		return nil, fmt.Errorf("Expected 3 date field separated with dot")
 	}
-	dd := pparr[0]
-	mm := pparr[1]
-	yy := pparr[2]
+	dd := strings.Trim(pparr[0], " ")
+	mm := strings.Trim(pparr[1], " ")
+	yy := strings.Trim(pparr[2], " ")
 	if yy == "" {
 		yy = fmt.Sprintf("%d", time.Now().Year())
 	}
@@ -316,7 +316,7 @@ func parseForPriceInfo(alt string) *db.Price {
 	timestr = strings.Trim(timestr, " ")
 	pptimearr := strings.Split(timestr, ":")
 	if len(pptimearr) != 2 {
-		return nil
+		return nil, fmt.Errorf("Expected hour and minute separated with ':'")
 	}
 	hh := pptimearr[0]
 	min := pptimearr[1]
@@ -325,7 +325,7 @@ func parseForPriceInfo(alt string) *db.Price {
 	fmt.Println("** Time for parse is ", timeforparse)
 	tt, err := time.Parse(time.RFC3339, timeforparse)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	priceItem := db.Price{
 		Price:        price,
@@ -333,5 +333,5 @@ func parseForPriceInfo(alt string) *db.Price {
 		Timestamp:    tt,
 	}
 
-	return &priceItem
+	return &priceItem, nil
 }
