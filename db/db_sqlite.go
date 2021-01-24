@@ -168,7 +168,7 @@ func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
 	return res, nil
 }
 
-func (ld *LiteDB) InsertPrice(idstock int64, price float64, timestamp int64) (int64, error) {
+func (ld *LiteDB) InsertPrice(tx *sql.Tx, idstock int64, price float64, timestamp int64) (int64, error) {
 	q := fmt.Sprintf(`INSERT INTO price(idstock,price,timestamp) VALUES(?,?,?)`)
 	if ld.DebugSQL {
 		log.Println("Query is", q)
@@ -178,10 +178,22 @@ func (ld *LiteDB) InsertPrice(idstock int64, price float64, timestamp int64) (in
 	if err != nil {
 		return 0, err
 	}
-	ressql, err := stmt.Exec(idstock, price, timestamp)
+	ressql, err := tx.Stmt(stmt).Exec(idstock, price, timestamp)
 	if err != nil {
 		return 0, err
 	}
 
 	return ressql.LastInsertId()
+}
+
+func (ld *LiteDB) GetNewTransaction() (*sql.Tx, error) {
+	tx, err := ld.connDb.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (ld *LiteDB) CommitTransaction(tx *sql.Tx) error {
+	return tx.Commit()
 }

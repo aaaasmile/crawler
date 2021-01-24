@@ -138,7 +138,11 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 	if len(list) > 0 {
 		imgBuf.Write([]byte("--" + bound1 + "--"))
 	}
-	log.Println("Images ok/err", len(list), len(listErr))
+	if len(listErr) == 0 {
+		log.Println("wow, all images are ok ", len(list))
+	} else {
+		log.Printf("Some errors: ok %d, error %d\n", len(list), len(listErr))
+	}
 
 	ctx := struct {
 		ListOK  []*idl.ChartInfo

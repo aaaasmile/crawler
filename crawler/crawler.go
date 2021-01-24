@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -170,15 +171,26 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	log.Println("Insert price list")
 	var id int64
 	var err error
+	var tx *sql.Tx
+	tx, err = cc.liteDB.GetNewTransaction()
+	if err != nil {
+		return err
+	}
+	count := 0
 	for _, v := range cc.list {
 		if v.PriceInfo == nil {
 			continue
 		}
-		id, err = cc.liteDB.InsertPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+		id, err = cc.liteDB.InsertPrice(tx, v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}
 		log.Printf("Inserted price id %d for stock id %d", id, v.ID)
+		count++
+	}
+	if count > 0 {
+		log.Println("Commit insert transactions ", count)
+		cc.liteDB.CommitTransaction(tx)
 	}
 	return nil
 }
