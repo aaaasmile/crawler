@@ -23,3 +23,5 @@ func TestParsePrice(t *testing.T) {
 	}
 
 }
+
+// try XTR.FTSE MIB 1D - Aktuell: 21,87 (22.01. / 17:36)

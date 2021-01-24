@@ -58,6 +58,9 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 	} else if err := cc.buildTheChartList(); err != nil {
 		return err
 	}
+	if err := cc.insertPriceList(); err != nil {
+		return err
+	}
 	if err := cc.sendChartEmail(); err != nil {
 		return err
 	}
@@ -155,6 +158,23 @@ loop:
 	elapsed := t.Sub(start)
 	log.Printf("Fetchart items %d total call duration: %v\n", len(cc.list), elapsed)
 
+	return nil
+}
+
+func (cc *CrawlerOfChart) insertPriceList() error {
+	log.Println("Insert price list")
+	var id int64
+	var err error
+	for _, v := range cc.list {
+		if v.PriceInfo == nil {
+			continue
+		}
+		id, err = cc.liteDB.InsertPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+		if err != nil {
+			return err
+		}
+		log.Printf("Inserted price id %d for stock id %d", id, v.ID)
+	}
 	return nil
 }
 
@@ -322,7 +342,7 @@ func parseForPriceInfo(alt string) (*db.Price, error) {
 	min := pptimearr[1]
 
 	timeforparse := fmt.Sprintf("%s-%s-%sT%s:%s:00+00:00", yy, mm, dd, hh, min)
-	fmt.Println("** Time for parse is ", timeforparse)
+	//fmt.Println("** Time for parse is ", timeforparse)
 	tt, err := time.Parse(time.RFC3339, timeforparse)
 	if err != nil {
 		return nil, err
