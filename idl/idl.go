@@ -8,14 +8,16 @@ var (
 )
 
 type ChartInfo struct {
-	DownloadFilename string
-	ImgName          string
-	CurrentPrice     string
-	PriceInfo        *db.Price
-	HasError         bool
-	ErrorText        string
-	Description      string
-	MoreInfoURL      string
-	ChartURL         string
-	ID               int64
+	DownloadFilename  string
+	ImgName           string
+	CurrentPrice      string
+	PriceInfo         *db.Price
+	PreviousPrice     float64
+	DiffPreviousPrice float64
+	HasError          bool
+	ErrorText         string
+	Description       string
+	MoreInfoURL       string
+	ChartURL          string
+	ID                int64
 }

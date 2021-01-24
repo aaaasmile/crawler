@@ -9,7 +9,7 @@ Subject: Chart Depot
 <div>
     {{ range .ListOK }}
     <div>{{.Description}}</div>
-    <div>{{.CurrentPrice}}</div>
+    <div>{{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %</div>
     <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
     <div><a href="{{.ChartURL}}">go to chart</a></div>
     <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
@@ -34,6 +34,7 @@ Hello friend,
 here a little summary of your portfolio without images.
 {{ range . }}
 {{.Description}}
+{{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %
 {{end}}
 
 Enjoy,

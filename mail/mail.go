@@ -196,8 +196,9 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 
 	if ms.simulate {
 		ss := msg.String()
-		if len(ss) > 200 {
-			ss = ss[0:200]
+		maxchar := 1200
+		if len(ss) > maxchar {
+			ss = ss[0:maxchar]
 		}
 		fmt.Printf("Message is: \n%s", ss)
 	}

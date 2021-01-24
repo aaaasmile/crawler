@@ -195,7 +195,22 @@ func (ld *LiteDB) FetchPrice(idstock int64, price float64, timestamp int64) ([]*
 	if ld.DebugSQL {
 		log.Println("Query is", q)
 	}
+	return ld.selectQueryPrice(q)
+}
 
+func (ld *LiteDB) FetchPreviosPriceInStock(idstock int64, timestampLatest int64) ([]*Price, error) {
+	q := `SELECT id,price,timestamp,idstock
+		  FROM price
+		  WHERE idstock=%d AND timestamp<%d
+		  LIMIT 1;`
+	q = fmt.Sprintf(q, idstock, timestampLatest)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+	return ld.selectQueryPrice(q)
+}
+
+func (ld *LiteDB) selectQueryPrice(q string) ([]*Price, error) {
 	rows, err := ld.connDb.Query(q)
 	if err != nil {
 		return nil, err

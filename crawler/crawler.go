@@ -107,8 +107,16 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	chRes := make(chan *InfoChart)
 	mapStock := make(map[int64]*db.StockInfo)
 	for _, v := range stockList {
+		if mapStock[v.ID] != nil {
+			return fmt.Errorf("Duplicate key %d", v.ID)
+		}
 		mapStock[v.ID] = v
-		go pickPicture(v.ChartURL, v.ID, cc.serverURI, chRes)
+	}
+	for _, v := range stockList {
+		func(URL string, id int64, serverURL string, chanres chan *InfoChart) {
+			go pickPicture(URL, id, serverURL, chanres)
+		}(v.ChartURL, v.ID, cc.serverURI, chRes)
+
 	}
 
 	chTimeout := make(chan struct{})
@@ -145,6 +153,8 @@ loop:
 				chartItem.MoreInfoURL = v.MoreInfoURL
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
+			} else {
+				log.Println("WARN: ID not recognized ", res.ID, res)
 			}
 
 			cc.list = append(cc.list, &chartItem)
@@ -180,6 +190,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	count := 0
 	for _, v := range cc.list {
 		if v.PriceInfo == nil {
+			log.Println("WARN: no price info avalible for ", v)
 			continue
 		}
 		pps, err = cc.liteDB.FetchPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
@@ -196,7 +207,20 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 		} else {
 			log.Println("Price already inserted", v.ID, v.PriceInfo.Price)
 		}
-
+		pps, err = cc.liteDB.FetchPreviosPriceInStock(v.ID, v.PriceInfo.TimestampInt)
+		if err != nil {
+			return err
+		}
+		if len(pps) == 1 {
+			prev := pps[0]
+			log.Println("Found previous price ", prev.Price)
+			v.PreviousPrice = prev.Price
+			if prev.Price != 0 {
+				v.DiffPreviousPrice = (v.PriceInfo.Price - prev.Price) / prev.Price * 100.0
+			}
+		} else if len(pps) > 1 {
+			return fmt.Errorf("Some strange previous %d %v %d", len(pps), pps, v.ID)
+		}
 	}
 	if count > 0 {
 		log.Println("Commit insert transactions ", count)
@@ -229,8 +253,8 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	return nil
 }
 
-func pickPicture(URL string, ix int64, serverURI string, chItem chan *InfoChart) {
-	log.Println("Fetching chart for ", ix, URL)
+func pickPicture(URL string, id int64, serverURI string, chItem chan *InfoChart) {
+	log.Println("Fetching chart for ", id, URL)
 	c := colly.NewCollector()
 	found := false
 	// On every a element which has href attribute call callback
@@ -238,14 +262,14 @@ func pickPicture(URL string, ix int64, serverURI string, chItem chan *InfoChart)
 		link := e.Attr("src")
 		alt := e.Attr("alt")
 		if strings.HasPrefix(link, "getChart") {
-			fileNameDst := fmt.Sprintf("data/chart_%d.png", ix)
+			fileNameDst := fmt.Sprintf("data/chart_%d.png", id)
 			log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
 			item := InfoChart{
 				Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
 				Link:    link,
 				Text:    e.Text,
 				FileDst: fileNameDst,
-				ID:      ix,
+				ID:      id,
 			}
 			err := downloadFile(serverURI+item.Link, item.FileDst)
 			if err != nil {
@@ -268,7 +292,7 @@ func pickPicture(URL string, ix int64, serverURI string, chItem chan *InfoChart)
 			log.Println("Chart image error")
 			item := InfoChart{
 				Error: err,
-				ID:    ix,
+				ID:    id,
 			}
 			chItem <- &item
 		}
@@ -280,7 +304,7 @@ func pickPicture(URL string, ix int64, serverURI string, chItem chan *InfoChart)
 		log.Println("Chart image not recognized")
 		item := InfoChart{
 			Error: fmt.Errorf("Chart not recognized on %s", URL),
-			ID:    ix,
+			ID:    id,
 		}
 		chItem <- &item
 	}
