@@ -131,7 +131,12 @@ loop:
 			} else {
 				chartItem.DownloadFilename = res.FileDst
 				chartItem.CurrentPrice = res.Alt
-				chartItem.PriceInfo, _ = parseForPriceInfo(res.Alt)
+				chartItem.PriceInfo, err = parseForPriceInfo(res.Alt)
+				if err != nil {
+					log.Println("Parse price info error", err)
+					chartItem.HasError = true
+					chartItem.ErrorText = err.Error()
+				}
 			}
 
 			if v, ok := mapStock[res.ID]; ok {
@@ -291,10 +296,10 @@ func downloadFile(URL, fileName string) error {
 func parseForPriceInfo(alt string) (*db.Price, error) {
 	// alt is something like: IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
 	arr := strings.Split(alt, "-")
-	if len(arr) != 2 {
-		return nil, fmt.Errorf("Expect one dash")
+	if len(arr) < 2 {
+		return nil, fmt.Errorf("Expect at least one dash")
 	}
-	item := arr[1]
+	item := arr[len(arr)-1]
 	arr = strings.Split(item, ":")
 	if len(arr) != 3 {
 		return nil, fmt.Errorf("Expect 2 ':'")
