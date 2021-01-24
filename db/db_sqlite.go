@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -41,6 +43,8 @@ type StockInfo struct {
 	Name        string
 	Description string
 	MoreInfoURL string
+	Quantity    float64
+	Cost        float64
 }
 
 func nullStrToStr(ci sql.NullString) string {
@@ -51,6 +55,14 @@ func nullStrToStr(ci sql.NullString) string {
 		}
 	}
 	return ""
+}
+
+func getRealFromString(s string) float64 {
+	// s is something like 2.639,00
+	s = strings.ReplaceAll(s, ".", "")
+	s = strings.ReplaceAll(s, ",", ".")
+	res, _ := strconv.ParseFloat(s, 64)
+	return res
 }
 
 func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at sql.NullString) {
@@ -166,6 +178,29 @@ func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
 		res = append(res, &item)
 	}
 	return res, nil
+}
+
+func (ld *LiteDB) updateStockinfo(isin string, quantity, cost float64) (int64, error) {
+	q := `UPDATE stockinfo SET (quantity,cost) = (?,?)
+	WHERE isin='%s';`
+	q = fmt.Sprintf(q, isin)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+
+	stmt, err := ld.connDb.Prepare(q)
+	if err != nil {
+		return 0, err
+	}
+
+	ressql, err := stmt.Exec(quantity, cost)
+	if err != nil {
+		return 0, err
+	}
+	rowNr, _ := ressql.RowsAffected()
+	log.Println("update, rows affected: ", rowNr)
+
+	return rowNr, nil
 }
 
 func (ld *LiteDB) InsertPrice(tx *sql.Tx, idstock int64, price float64, timestamp int64) (int64, error) {
