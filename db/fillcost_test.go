@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestFilloutCost(t *testing.T) {
+func FilloutCost(t *testing.T) { // Prefix with test if you want to run this function again
 	// function used to update the db from a csv file
 	// Quantity and cost
 	lite := LiteDB{
@@ -60,5 +60,5 @@ func TestFilloutCost(t *testing.T) {
 			return
 		}
 	}
-	t.Error("Finished")
+	t.Error("Finished") // force output
 }

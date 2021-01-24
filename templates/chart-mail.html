@@ -35,6 +35,8 @@ here a little summary of your portfolio without images.
 {{ range . }}
 {{.Description}}
 {{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %
+W/L: {{.WinOrLost}}, {{.WinOrLostPerc}} %
+Value: {{.TotCurrValue}}, Cost: {{.TotCost}}, Quantity: {{.Quantity}}
 {{end}}
 
 Enjoy,

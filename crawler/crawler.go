@@ -113,10 +113,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 		mapStock[v.ID] = v
 	}
 	for _, v := range stockList {
-		func(URL string, id int64, serverURL string, chanres chan *InfoChart) {
-			go pickPicture(URL, id, serverURL, chanres)
-		}(v.ChartURL, v.ID, cc.serverURI, chRes)
-
+		go pickPicture(v.ChartURL, v.ID, cc.serverURI, chRes)
 	}
 
 	chTimeout := make(chan struct{})
@@ -153,6 +150,18 @@ loop:
 				chartItem.MoreInfoURL = v.MoreInfoURL
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
+				if chartItem.PriceInfo != nil {
+					priceCurr := chartItem.PriceInfo.Price
+					totval := priceCurr * v.Quantity
+					chartItem.WinOrLost = totval - v.Cost
+					if v.Cost != 0 {
+						chartItem.WinOrLostPerc = chartItem.WinOrLost / v.Cost * 100.0
+					}
+					chartItem.TotCurrValue = totval
+					chartItem.TotCost = v.Cost
+					chartItem.Quantity = v.Quantity
+
+				}
 			} else {
 				log.Println("WARN: ID not recognized ", res.ID, res)
 			}

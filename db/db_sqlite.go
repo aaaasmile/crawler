@@ -151,7 +151,7 @@ func (ld *LiteDB) UpdateSecret(ID int, accessToken, refreshToken string) (int64,
 }
 
 func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
-	q := `SELECT id,isin,charturl,name,description,moreinfourl
+	q := `SELECT id,isin,charturl,name,description,moreinfourl,quantity,cost
 		  FROM stockinfo
 		  LIMIT %d;`
 	q = fmt.Sprintf(q, limit)
@@ -171,7 +171,7 @@ func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
 	for rows.Next() {
 		item := StockInfo{}
 		if err := rows.Scan(&item.ID, &isin, &cu,
-			&na, &des, &mor); err != nil {
+			&na, &des, &mor, &item.Quantity, &item.Cost); err != nil {
 			return nil, err
 		}
 		item.FromNullString(isin, cu, na, des, mor)
