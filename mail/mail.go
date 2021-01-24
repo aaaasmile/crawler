@@ -191,7 +191,11 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 	imgBuf.WriteTo(msg)
 
 	if ms.simulate {
-		fmt.Printf("Message is: \n%s", msg.String())
+		ss := msg.String()
+		if len(ss) > 200 {
+			ss = ss[0:200]
+		}
+		fmt.Printf("Message is: \n%s", ss)
 	}
 
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())

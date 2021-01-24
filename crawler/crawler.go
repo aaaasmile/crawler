@@ -103,7 +103,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	mapStock := make(map[int]*db.StockInfo)
 	for _, v := range stockList {
 		mapStock[v.ID] = v
-		go pickPicture(v.ChartURL, v.ID, chRes)
+		go pickPicture(v.ChartURL, v.ID, cc.serverURI, chRes)
 	}
 
 	chTimeout := make(chan struct{})
@@ -120,19 +120,13 @@ loop:
 		select {
 		case res = <-chRes:
 			chartItem := idl.ChartInfo{}
-			err := downloadFile(cc.serverURI+res.Link, res.FileDst)
-			if err != nil {
-				log.Println("Downloading image error")
+			chartItem.HasError = res.Error != nil
+			if res.Error != nil {
 				chartItem.HasError = true
-				chartItem.ErrorText = err.Error()
+				chartItem.ErrorText = res.Error.Error()
 			} else {
-				chartItem.HasError = res.Error != nil
-				if res.Error != nil {
-					chartItem.ErrorText = res.Error.Error()
-				} else {
-					chartItem.DownloadFilename = res.FileDst
-					chartItem.CurrentPrice = res.Alt
-				}
+				chartItem.DownloadFilename = res.FileDst
+				chartItem.CurrentPrice = res.Alt
 			}
 
 			if v, ok := mapStock[res.Ix]; ok {
@@ -185,7 +179,7 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	return nil
 }
 
-func pickPicture(URL string, ix int, chItem chan *InfoChart) {
+func pickPicture(URL string, ix int, serverURI string, chItem chan *InfoChart) {
 	log.Println("Fetching chart for ", ix, URL)
 	c := colly.NewCollector()
 	found := false
@@ -202,6 +196,11 @@ func pickPicture(URL string, ix int, chItem chan *InfoChart) {
 				Text:    e.Text,
 				FileDst: fileNameDst,
 				Ix:      ix,
+			}
+			err := downloadFile(serverURI+item.Link, item.FileDst)
+			if err != nil {
+				log.Println("Downloading image error", err)
+				item.Error = err
 			}
 			found = true
 			chItem <- &item
