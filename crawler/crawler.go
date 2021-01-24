@@ -172,6 +172,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	var id int64
 	var err error
 	var tx *sql.Tx
+	var pps []*db.Price
 	tx, err = cc.liteDB.GetNewTransaction()
 	if err != nil {
 		return err
@@ -181,12 +182,21 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 		if v.PriceInfo == nil {
 			continue
 		}
-		id, err = cc.liteDB.InsertPrice(tx, v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+		pps, err = cc.liteDB.FetchPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}
-		log.Printf("Inserted price id %d for stock id %d", id, v.ID)
-		count++
+		if len(pps) == 0 {
+			id, err = cc.liteDB.InsertPrice(tx, v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+			if err != nil {
+				return err
+			}
+			log.Printf("Inserted price id %d for stock id %d", id, v.ID)
+			count++
+		} else {
+			log.Println("Price already inserted", v.ID, v.PriceInfo.Price)
+		}
+
 	}
 	if count > 0 {
 		log.Println("Commit insert transactions ", count)
@@ -195,7 +205,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	return nil
 }
 
-func (cc *CrawlerOfChart) fillWithSomeDummy() {
+func (cc *CrawlerOfChart) fillWithSomeTesdata() {
 	// example without the crawler
 	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
 	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})

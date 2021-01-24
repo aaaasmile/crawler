@@ -186,6 +186,34 @@ func (ld *LiteDB) InsertPrice(tx *sql.Tx, idstock int64, price float64, timestam
 	return ressql.LastInsertId()
 }
 
+func (ld *LiteDB) FetchPrice(idstock int64, price float64, timestamp int64) ([]*Price, error) {
+	q := `SELECT id,price,timestamp,idstock
+		  FROM price
+		  WHERE idstock=%d AND price=%f AND timestamp=%d
+		  LIMIT 1;`
+	q = fmt.Sprintf(q, idstock, price, timestamp)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+
+	rows, err := ld.connDb.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	res := make([]*Price, 0)
+	for rows.Next() {
+		item := Price{}
+		var ti int64
+		if err := rows.Scan(&item.ID, &item.Price, &ti, &item.IDStock); err != nil {
+			return nil, err
+		}
+		item.Timestamp = time.Unix(ti, 0)
+		res = append(res, &item)
+	}
+	return res, nil
+}
+
 func (ld *LiteDB) GetNewTransaction() (*sql.Tx, error) {
 	tx, err := ld.connDb.Begin()
 	if err != nil {
