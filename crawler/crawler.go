@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,6 +128,7 @@ loop:
 			} else {
 				chartItem.DownloadFilename = res.FileDst
 				chartItem.CurrentPrice = res.Alt
+				chartItem.PriceInfo = parseForPriceInfo(res.Alt)
 			}
 
 			if v, ok := mapStock[res.ID]; ok {
@@ -264,4 +266,72 @@ func downloadFile(URL, fileName string) error {
 	}
 	time.Sleep(200)
 	return nil
+}
+
+func parseForPriceInfo(alt string) *db.Price {
+	// alt is something like: IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
+	arr := strings.Split(alt, "-")
+	if len(arr) != 2 {
+		return nil
+	}
+	item := arr[1]
+	arr = strings.Split(item, ":")
+	if len(arr) != 3 {
+		return nil
+	}
+	item = strings.Join(arr[1:], "")
+	item = strings.Trim(item, " ") //16,34 (15.01. / 17:36)
+
+	arr = strings.Split(item, " ")
+	if len(arr) < 1 {
+		return nil
+	}
+	pricestr := arr[0] //16,34
+	price, err := strconv.ParseFloat(pricestr, 32)
+	if err != nil {
+		log.Println("Warning price not parsed: ", err)
+		return nil
+	}
+
+	datestr := strings.Join(arr[1:], "")
+	datestr = strings.Trim(datestr, "(")
+	datestr = strings.Trim(datestr, ")") //15.01. / 17:36
+	arr = strings.Split(datestr, "/")
+	if len(arr) != 2 {
+		return nil
+	}
+	datestr = arr[0] //15.01.
+	pparr := strings.Split(datestr, ".")
+	if len(pparr) != 3 {
+		return nil
+	}
+	dd := pparr[0]
+	mm := pparr[1]
+	yy := pparr[2]
+	if yy == "" {
+		yy = fmt.Sprintf("%d", time.Now().Year())
+	}
+
+	timestr := arr[1] // 17:36
+	timestr = strings.Trim(timestr, " ")
+	pptimearr := strings.Split(timestr, ":")
+	if len(pptimearr) != 2 {
+		return nil
+	}
+	hh := pptimearr[0]
+	min := pptimearr[1]
+
+	timeforparse := fmt.Sprintf("%s-%s-%sT%s:%s:00+00:00", yy, mm, dd, hh, min)
+	fmt.Println("** Time for parse is ", timeforparse)
+	tt, err := time.Parse(time.RFC3339, timeforparse)
+	if err != nil {
+		return nil
+	}
+	priceItem := db.Price{
+		Price:        price,
+		TimestampInt: tt.Local().Unix(),
+		Timestamp:    tt,
+	}
+
+	return &priceItem
 }

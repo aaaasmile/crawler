@@ -30,4 +30,13 @@ CREATE TABLE IF NOT EXISTS "secrets" (
 	"accesstoken"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+DROP TABLE IF EXISTS "price";
+CREATE TABLE IF NOT EXISTS "price" (
+	"id"	INTEGER NOT NULL,
+	"price"	REAL,
+	"timestamp"	INTEGER,
+	"idstock"	INTEGER NOT NULL,
+	FOREIGN KEY("idstock") REFERENCES "stockinfo"("id"),
+	PRIMARY KEY("id")
+);
 COMMIT;

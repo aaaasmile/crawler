@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -25,6 +26,23 @@ type Secret struct {
 	Email        string
 }
 
+type Price struct {
+	ID           int64
+	Price        float64
+	TimestampInt int64
+	Timestamp    time.Time
+	IDStock      int64
+}
+
+type StockInfo struct {
+	ID          int64
+	ISIN        string
+	ChartURL    string
+	Name        string
+	Description string
+	MoreInfoURL string
+}
+
 func nullStrToStr(ci sql.NullString) string {
 	if ci.Valid {
 		v, _ := ci.Value()
@@ -42,15 +60,6 @@ func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at sql.NullString) {
 	sc.RefreshToken = nullStrToStr(rt)
 	sc.Email = nullStrToStr(em)
 	sc.AccessToken = nullStrToStr(at)
-}
-
-type StockInfo struct {
-	ID          int64
-	ISIN        string
-	ChartURL    string
-	Name        string
-	Description string
-	MoreInfoURL string
 }
 
 func (si *StockInfo) FromNullString(isin, cu, na, des, mor sql.NullString) {
@@ -157,4 +166,24 @@ func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
 		res = append(res, &item)
 	}
 	return res, nil
+}
+
+func (ld *LiteDB) InsertPrice(idstock int64, price float32, date time.Time) (int64, error) {
+	q := fmt.Sprintf(`INSERT INTO price(idstock,price,timestamp) VALUES(?,?,?)`)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+
+	stmt, err := ld.connDb.Prepare(q)
+	if err != nil {
+		return 0, err
+	}
+	ressql, err := stmt.Exec(idstock, price, date.Local().Unix())
+	if err != nil {
+		return 0, err
+	}
+
+	log.Println("Price inserted ok")
+
+	return ressql.LastInsertId()
 }
