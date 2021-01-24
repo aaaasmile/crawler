@@ -12,5 +12,14 @@ func TestParsePrice(t *testing.T) {
 	if pi.Price != 16.34 {
 		t.Error("Expect 16.34 but recived ", pi.Price)
 	}
-	t.Error(pi.Timestamp)
+	if pi.Timestamp.Hour() != 17 {
+		t.Error("Expect 17 but recived ", pi.Timestamp.Hour())
+	}
+	if pi.Timestamp.Hour() != 17 {
+		t.Error("Expect 36 but recived ", pi.Timestamp.Minute())
+	}
+	if pi.TimestampInt != 1610732160 {
+		t.Error("Expect 1610732160 but recived ", pi.TimestampInt)
+	}
+
 }
