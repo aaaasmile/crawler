@@ -20,6 +20,7 @@ type Secret struct {
 	ClientID     string
 	ClientSecret string
 	AuthToken    string
+	AccessToken  string
 	RefreshToken string
 	Email        string
 }
@@ -34,12 +35,13 @@ func nullStrToStr(ci sql.NullString) string {
 	return ""
 }
 
-func (sc *Secret) FromNullString(ci, cs, aut, rt, em sql.NullString) {
+func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at sql.NullString) {
 	sc.ClientID = nullStrToStr(ci)
 	sc.ClientSecret = nullStrToStr(cs)
 	sc.AuthToken = nullStrToStr(aut)
 	sc.RefreshToken = nullStrToStr(rt)
 	sc.Email = nullStrToStr(em)
+	sc.AccessToken = nullStrToStr(at)
 }
 
 type StockInfo struct {
@@ -74,7 +76,7 @@ func (ld *LiteDB) OpenSqliteDatabase() error {
 }
 
 func (ld *LiteDB) FetchSecret() ([]Secret, error) {
-	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email
+	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email,accesstoken
 		  FROM secrets
 		  LIMIT 1;`
 	q = fmt.Sprintf(q)
@@ -87,20 +89,44 @@ func (ld *LiteDB) FetchSecret() ([]Secret, error) {
 		return nil, err
 	}
 
-	var ci, cs, aut, rt, em sql.NullString
+	var ci, cs, aut, rt, em, at sql.NullString
 
 	defer rows.Close()
 	res := make([]Secret, 0)
 	for rows.Next() {
 		item := Secret{}
 		if err := rows.Scan(&item.ID, &ci, &cs,
-			&aut, &rt, &em); err != nil {
+			&aut, &rt, &em, &at); err != nil {
 			return nil, err
 		}
-		item.FromNullString(ci, cs, aut, rt, em)
+		item.FromNullString(ci, cs, aut, rt, em, at)
 		res = append(res, item)
 	}
 	return res, nil
+}
+
+func (ld *LiteDB) UpdateSecret(ID int, accessToken, refreshToken string) (int64, error) {
+	q := `UPDATE secrets SET (accesstoken,refreshtoken) = (?,?)
+	WHERE id=%d;`
+	q = fmt.Sprintf(q, ID)
+	if ld.DebugSQL {
+		log.Println("Query is", q)
+	}
+
+	stmt, err := ld.connDb.Prepare(q)
+	if err != nil {
+		return 0, err
+	}
+
+	ressql, err := stmt.Exec(accessToken, refreshToken)
+	if err != nil {
+		return 0, err
+	}
+	rowNr, _ := ressql.RowsAffected()
+	log.Println("update, rows affected: ", rowNr)
+
+	return rowNr, nil
+
 }
 
 func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {

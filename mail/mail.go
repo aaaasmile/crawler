@@ -46,12 +46,14 @@ func NewMailSender(ld *db.LiteDB, simulate bool) (*MailSender, error) {
 		return nil, fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
 	}
 	ms.secret = &secr[0]
-	ms.oAuthGmailService()
+	if err := ms.oAuthGmailService(); err != nil {
+		return nil, err
+	}
 
 	return &ms, nil
 }
 
-func (ms *MailSender) oAuthGmailService() {
+func (ms *MailSender) oAuthGmailService() error {
 	log.Println("Authorize with oauth")
 	config := oauth2.Config{
 		ClientID:     ms.secret.ClientID,
@@ -60,27 +62,55 @@ func (ms *MailSender) oAuthGmailService() {
 		RedirectURL:  "http://localhost",
 	}
 
+	accessToken := ms.secret.AccessToken
+	if accessToken == "" {
+		accessToken = ms.secret.AuthToken
+	}
+	log.Println("Using access token: ", accessToken)
+
 	token := oauth2.Token{
-		AccessToken:  ms.secret.AuthToken,
+		AccessToken:  accessToken,
 		RefreshToken: ms.secret.RefreshToken,
 		TokenType:    "Bearer",
 		Expiry:       time.Now(),
 	}
 
 	var tokenSource = config.TokenSource(context.Background(), &token)
+	var tokenUpdated *oauth2.Token
+	tokenUpdated, err := tokenSource.Token()
+	if err != nil {
+		return err
+	}
+	log.Println("Here the updated token. Refresh ", tokenUpdated.RefreshToken)
+	log.Println("Here the updated token. AccessToken ", tokenUpdated.AccessToken)
+	var at, rt = true, true
+	if ms.secret.RefreshToken == tokenUpdated.RefreshToken {
+		log.Println("Refresh token doesn't changed")
+		rt = false
+	}
+	if ms.secret.AccessToken == tokenUpdated.AccessToken {
+		log.Println("Access token doesn't changed")
+		at = false
+	}
+	if at || rt {
+		log.Println("Update secret in db")
+		if _, err := ms.liteDB.UpdateSecret(ms.secret.ID, tokenUpdated.AccessToken, tokenUpdated.RefreshToken); err != nil {
+			return err
+		}
+	}
 
 	srv, err := gmail.NewService(context.Background(), option.WithTokenSource(tokenSource))
 	if err != nil {
 		log.Printf("Unable to retrieve Gmail client: %v", err)
+		return err
 	}
 
 	ms.gmailService = srv
-	if ms.gmailService != nil {
-		fmt.Println("Email service is initialized")
-	}
+	log.Println("Email service is initialized")
+	return nil
 }
 
-func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
+func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
 	log.Println("Send e-mail with gmail service using multipart. Charts: ", len(listsrc))
 
 	bound1 := randomBoundary()
@@ -170,6 +200,7 @@ func (ms *MailSender) SendEmailOAUTH2(templFileName string, listsrc []*idl.Chart
 		if _, err := ms.gmailService.Users.Messages.Send("me", &message).Do(); err != nil {
 			return err
 		}
+
 		log.Println("E-Mail is on the way. Everything is going well.")
 	} else {
 		log.Println("Simulate Mail sent")

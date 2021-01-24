@@ -178,7 +178,7 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	}
 
 	templFileName := "templates/chart-mail.html"
-	if err := mm.SendEmailOAUTH2(templFileName, cc.list); err != nil {
+	if err := mm.SendEmailViaOAUTH2(templFileName, cc.list); err != nil {
 		return err
 	}
 
