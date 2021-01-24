@@ -19,10 +19,11 @@ import (
 )
 
 type CrawlerOfChart struct {
-	liteDB    *db.LiteDB
-	list      []*idl.ChartInfo
-	Simulate  bool
-	ServerURI string
+	liteDB      *db.LiteDB
+	list        []*idl.ChartInfo
+	serverURI   string
+	Simulate    bool
+	ResendEmail bool
 }
 
 type InfoChart struct {
@@ -43,18 +44,47 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 		DebugSQL:     conf.Current.DebugSQL,
 		SqliteDBPath: conf.Current.DBPath,
 	}
-	cc.ServerURI = conf.Current.ServerURI
+	cc.serverURI = conf.Current.ServerURI
 
 	if err := cc.liteDB.OpenSqliteDatabase(); err != nil {
 		return err
 	}
 
-	if err := cc.buildTheChartList(); err != nil {
+	if cc.ResendEmail {
+		if err := cc.buildChartListFromLastDown(); err != nil {
+			return err
+		}
+	} else if err := cc.buildTheChartList(); err != nil {
 		return err
 	}
 	if err := cc.sendChartEmail(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
+	log.Println("Build list from last download")
+
+	cc.list = make([]*idl.ChartInfo, 0)
+	stockList, err := cc.liteDB.FetchStockInfo(100)
+	if err != nil {
+		return err
+	}
+	log.Println("Found stocks ", len(stockList))
+	for _, v := range stockList {
+		chartItem := idl.ChartInfo{}
+		fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
+		chartItem.Description = v.Description
+		chartItem.MoreInfoURL = v.MoreInfoURL
+		chartItem.ChartURL = v.ChartURL
+		chartItem.DownloadFilename = fileNameDst
+
+		cc.list = append(cc.list, &chartItem)
+	}
+
+	log.Println("Fetchart items", len(cc.list))
 
 	return nil
 }
@@ -90,7 +120,7 @@ loop:
 		select {
 		case res = <-chRes:
 			chartItem := idl.ChartInfo{}
-			err := downloadFile(cc.ServerURI+res.Link, res.FileDst)
+			err := downloadFile(cc.serverURI+res.Link, res.FileDst)
 			if err != nil {
 				log.Println("Downloading image error")
 				chartItem.HasError = true

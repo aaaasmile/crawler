@@ -14,6 +14,7 @@ func main() {
 	var ver = flag.Bool("ver", false, "Prints the current version")
 	var simulate = flag.Bool("simulate", false, "Simulate email send")
 	var configfile = flag.String("config", "config.toml", "Configuration file path")
+	var resendmail = flag.Bool("resendmail", false, "Resend email with the last downloaded data")
 	flag.Parse()
 
 	if *ver {
@@ -22,7 +23,8 @@ func main() {
 	}
 
 	crw := crawler.CrawlerOfChart{
-		Simulate: *simulate,
+		Simulate:    *simulate,
+		ResendEmail: *resendmail,
 	}
 
 	if err := crw.Start(*configfile); err != nil {
