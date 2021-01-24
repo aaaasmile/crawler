@@ -19,9 +19,10 @@ import (
 )
 
 type CrawlerOfChart struct {
-	liteDB   *db.LiteDB
-	list     []*idl.ChartInfo
-	Simulate bool
+	liteDB    *db.LiteDB
+	list      []*idl.ChartInfo
+	Simulate  bool
+	ServerURI string
 }
 
 type InfoChart struct {
@@ -42,6 +43,7 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 		DebugSQL:     conf.Current.DebugSQL,
 		SqliteDBPath: conf.Current.DBPath,
 	}
+	cc.ServerURI = conf.Current.ServerURI
 
 	if err := cc.liteDB.OpenSqliteDatabase(); err != nil {
 		return err
@@ -88,7 +90,7 @@ loop:
 		select {
 		case res = <-chRes:
 			chartItem := idl.ChartInfo{}
-			err := downloadFile(conf.Current.ChatServerURI+res.Link, res.FileDst)
+			err := downloadFile(cc.ServerURI+res.Link, res.FileDst)
 			if err != nil {
 				log.Println("Downloading image error")
 				chartItem.HasError = true
