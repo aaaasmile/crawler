@@ -32,7 +32,7 @@ type InfoChart struct {
 	Link    string
 	Text    string
 	Alt     string
-	Ix      int
+	ID      int64
 }
 
 func (cc *CrawlerOfChart) Start(configfile string) error {
@@ -100,7 +100,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	log.Println("Found stocks ", len(stockList))
 
 	chRes := make(chan *InfoChart)
-	mapStock := make(map[int]*db.StockInfo)
+	mapStock := make(map[int64]*db.StockInfo)
 	for _, v := range stockList {
 		mapStock[v.ID] = v
 		go pickPicture(v.ChartURL, v.ID, cc.serverURI, chRes)
@@ -129,14 +129,15 @@ loop:
 				chartItem.CurrentPrice = res.Alt
 			}
 
-			if v, ok := mapStock[res.Ix]; ok {
+			if v, ok := mapStock[res.ID]; ok {
 				chartItem.Description = v.Description
 				chartItem.MoreInfoURL = v.MoreInfoURL
 				chartItem.ChartURL = v.ChartURL
+				chartItem.ID = res.ID
 			}
 
 			cc.list = append(cc.list, &chartItem)
-			log.Println("Append a new chart with ", res.FileDst, res.Ix, counter)
+			log.Println("Append a new chart with ", res.FileDst, res.ID, counter)
 			counter--
 			if counter <= 0 {
 				log.Println("All images are donwloaded")
@@ -179,7 +180,7 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	return nil
 }
 
-func pickPicture(URL string, ix int, serverURI string, chItem chan *InfoChart) {
+func pickPicture(URL string, ix int64, serverURI string, chItem chan *InfoChart) {
 	log.Println("Fetching chart for ", ix, URL)
 	c := colly.NewCollector()
 	found := false
@@ -195,7 +196,7 @@ func pickPicture(URL string, ix int, serverURI string, chItem chan *InfoChart) {
 				Link:    link,
 				Text:    e.Text,
 				FileDst: fileNameDst,
-				Ix:      ix,
+				ID:      ix,
 			}
 			err := downloadFile(serverURI+item.Link, item.FileDst)
 			if err != nil {
@@ -218,7 +219,7 @@ func pickPicture(URL string, ix int, serverURI string, chItem chan *InfoChart) {
 			log.Println("Chart image error")
 			item := InfoChart{
 				Error: err,
-				Ix:    ix,
+				ID:    ix,
 			}
 			chItem <- &item
 		}
@@ -230,7 +231,7 @@ func pickPicture(URL string, ix int, serverURI string, chItem chan *InfoChart) {
 		log.Println("Chart image not recognized")
 		item := InfoChart{
 			Error: fmt.Errorf("Chart not recognized on %s", URL),
-			Ix:    ix,
+			ID:    ix,
 		}
 		chItem <- &item
 	}

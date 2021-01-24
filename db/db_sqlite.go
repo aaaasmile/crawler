@@ -45,7 +45,7 @@ func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at sql.NullString) {
 }
 
 type StockInfo struct {
-	ID          int
+	ID          int64
 	ISIN        string
 	ChartURL    string
 	Name        string

@@ -14,4 +14,5 @@ type ChartInfo struct {
 	Description      string
 	MoreInfoURL      string
 	ChartURL         string
+	ID               int64
 }
