@@ -28,7 +28,7 @@ func FilloutCost(t *testing.T) { // Prefix with test if you want to run this fun
 	}
 	reader := csv.NewReader(bufio.NewReader(csvFile))
 	reader.Comma = ';'
-	fieldKeys := []string{"time", "ISIN", "Type", "Name", "Place", "Quantity", "QtyLBL", "ValAt", "ValCurr", "ValDate", "Cost", "CostCurr", "W/L", "W/LCurr", "W/LPerc", "W/LPercSymb"}
+	fieldKeys := []string{"time", "ISIN", "Type", "Name", "Place", "Quantity", "QtyLBL", "ValAt", "ValCurr", "ValDate", "TotVal", "TotValCurr", "W/L", "W/LCurr", "W/LPerc", "W/LPercSymb"}
 
 	lineCount := 0
 	stocks := make([]*StockInfo, 0)
@@ -48,7 +48,7 @@ func FilloutCost(t *testing.T) { // Prefix with test if you want to run this fun
 		item := StockInfo{
 			ISIN:     mmfield["ISIN"],
 			Quantity: getRealFromString(mmfield["Quantity"]),
-			Cost:     getRealFromString(mmfield["Cost"]),
+			Cost:     getRealFromString(mmfield["TotVal"]) - getRealFromString(mmfield["W/L"]),
 		}
 		stocks = append(stocks, &item)
 		lineCount++

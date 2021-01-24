@@ -200,7 +200,7 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 		if len(ss) > maxchar {
 			ss = ss[0:maxchar]
 		}
-		fmt.Printf("Message is: \n%s", ss)
+		fmt.Printf("Message is: \n%s\n", ss)
 	}
 
 	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
@@ -212,7 +212,7 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 
 		log.Println("E-Mail is on the way. Everything is going well.")
 	} else {
-		log.Println("Simulate Mail sent")
+		log.Printf("Simulate Mail sent")
 	}
 
 	return nil
