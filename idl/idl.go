@@ -14,15 +14,16 @@ type ChartInfo struct {
 	PriceInfo         *db.Price
 	PreviousPrice     float64
 	DiffPreviousPrice float64
-	WinOrLost         float64
-	WinOrLostPerc     float64
+	WinOrLoss         string
+	WinOrLossPerc     string
 	HasError          bool
 	ErrorText         string
 	Description       string
 	MoreInfoURL       string
 	ChartURL          string
 	ID                int64
-	TotCurrValue      float64
-	TotCost           float64
-	Quantity          float64
+	TotCurrValue      string
+	TotCost           string
+	Quantity          string
+	ColorWL           string
 }

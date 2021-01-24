@@ -9,7 +9,9 @@ Subject: Chart Depot
 <div>
     {{ range .ListOK }}
     <div>{{.Description}}</div>
-    <div>{{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %</div>
+    <div>{{.CurrentPrice}} EUR, previous {{.PreviousPrice}} EUR, diff: {{.DiffPreviousPrice}} %</div>
+    <div>Value: {{.TotCurrValue}} EUR, Cost: {{.TotCost}} EUR, Quantity: {{.Quantity}}</div>
+    <div style="color: {{.ColorWL}};">W/L: {{.WinOrLoss}} EUR, {{.WinOrLossPerc}} %</div>
     <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
     <div><a href="{{.ChartURL}}">go to chart</a></div>
     <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
@@ -35,8 +37,8 @@ here a little summary of your portfolio without images.
 {{ range . }}
 {{.Description}}
 {{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %
-W/L: {{.WinOrLost}}, {{.WinOrLostPerc}} %
-Value: {{.TotCurrValue}}, Cost: {{.TotCost}}, Quantity: {{.Quantity}}
+Value: {{.TotCurrValue}} EUR, Cost: {{.TotCost}} EUR, Quantity: {{.Quantity}}
+W/L: {{.WinOrLoss}} EUR, {{.WinOrLossPerc}} %
 {{end}}
 
 Enjoy,

@@ -129,7 +129,7 @@ loop:
 	for {
 		select {
 		case res = <-chRes:
-			chartItem := idl.ChartInfo{}
+			chartItem := idl.ChartInfo{ColorWL: "green"}
 			chartItem.HasError = res.Error != nil
 			if res.Error != nil {
 				chartItem.HasError = true
@@ -153,13 +153,18 @@ loop:
 				if chartItem.PriceInfo != nil {
 					priceCurr := chartItem.PriceInfo.Price
 					totval := priceCurr * v.Quantity
-					chartItem.WinOrLost = totval - v.Cost
-					if v.Cost != 0 {
-						chartItem.WinOrLostPerc = chartItem.WinOrLost / v.Cost * 100.0
+					winorloss := totval - v.Cost
+					chartItem.WinOrLoss = fmt.Sprintf("%.2f", winorloss)
+					if winorloss < 0 {
+						chartItem.ColorWL = "red"
 					}
-					chartItem.TotCurrValue = totval
-					chartItem.TotCost = v.Cost
-					chartItem.Quantity = v.Quantity
+					if v.Cost != 0 {
+						wlper := winorloss / v.Cost * 100.0
+						chartItem.WinOrLossPerc = fmt.Sprintf("%.2f", wlper)
+					}
+					chartItem.TotCurrValue = fmt.Sprintf("%.2f", totval)
+					chartItem.TotCost = fmt.Sprintf("%.2f", v.Cost)
+					chartItem.Quantity = fmt.Sprintf("%.2f", v.Quantity)
 
 				}
 			} else {
