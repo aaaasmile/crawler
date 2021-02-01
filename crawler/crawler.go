@@ -264,12 +264,13 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 		return err
 	}
 	if cc.UseDBToken {
-		log.Println("Using token stored into the db (aka manually created and copied there)")
 		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
 			return err
 		}
 	} else {
-		log.Println("JWT auth. please do it...")
+		if err := mm.AuthGmailServiceWithJWT(); err != nil {
+			return err
+		}
 	}
 
 	templFileName := "templates/chart-mail.html"

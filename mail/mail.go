@@ -20,6 +20,7 @@ import (
 	"github.com/aaaasmile/crawler/conf"
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
@@ -57,16 +58,64 @@ func (ms *MailSender) FetchSecretFromDb() error {
 	return nil
 }
 
+func (ms *MailSender) AuthGmailServiceWithJWT() error {
+	log.Println("Request access token via JWT")
+	accessToken := ""
+	tk, err := ms.getJWTToken()
+	if err != nil {
+		return err
+	}
+	log.Fatal(tk)
+
+	return ms.oAuthGmailService(accessToken, "")
+}
+
+func (ms *MailSender) getJWTToken() (string, error) {
+	log.Println("Create JWT Using key id: ", ms.serviceAccount.PrivateKeyID)
+	keyB := []byte(ms.serviceAccount.PrivateKey)
+
+	mySigningKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyB)
+	if err != nil {
+		return "", err
+	}
+	fmt.Printf("** Signing key %q \n", mySigningKey)
+
+	iat := time.Now()
+	strForSec := "3000s"
+	log.Printf("JWT will Expire in %s seconds\n", strForSec)
+	duration, _ := time.ParseDuration(strForSec)
+	exp := iat.Add(duration)
+	var claims jwt.MapClaims
+	claims = jwt.MapClaims{
+		"iss":   ms.serviceAccount.ClientMail,
+		"sub":   ms.secret.Email,
+		"scope": "https://mail.google.com",
+		"exp":   exp.Unix(),
+		"iat":   iat.Unix(),
+	}
+	log.Println("Using claim", claims)
+
+	// "iss": "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer.gserviceaccount.com",
+	// "sub": "some.user@example.com",
+	// "scope": "https://www.googleapis.com/auth/prediction",
+	// "aud": "https://oauth2.googleapis.com/token",
+	// "exp": 1328554385,
+	// "iat": 1328550785
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tk, err := token.SignedString(mySigningKey)
+	return tk, err
+
+}
+
 func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
+	log.Println("Using token stored into the db (aka manually created and copied there)")
 	accessToken := ms.secret.AccessToken
 	if accessToken == "" {
 		accessToken = ms.secret.AuthToken
 	}
 
-	if err := ms.oAuthGmailService(accessToken, ms.secret.RefreshToken); err != nil {
-		return err
-	}
-	return nil
+	return ms.oAuthGmailService(accessToken, ms.secret.RefreshToken)
 }
 
 func (ms *MailSender) oAuthGmailService(accessToken, refreshToken string) error {
