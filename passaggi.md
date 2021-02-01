@@ -27,7 +27,6 @@ Dopo una settimana sembra che la coppia "Authtoken" e "RefreshToken" non sia pi�
 Quindi vorrei rinnovarla nel codice, ma non ho trovato il modo se non questo metodo manuale.
 
 
-
 Mentre le credential del Client (client id e client secret) qui:
 https://console.cloud.google.com/
 La parte più difficoltosa è stata la pagina di consent, dove solo alla fine ho potuto inserire un test user.
@@ -35,4 +34,23 @@ https://console.cloud.google.com/apis/credentials/consent?project=mailcharter
 
 
 Però la Mail di prova funziona a meraviglia.
+
+## Refresh Token
+Dopo una lettura della documentazione https://developers.google.com/identity/protocols/oauth2
+risulta chiaro che un'applicazione che dovrebbe essere web, ma destinata a rimanere in fase di test,
+ha un refresh toke valido per una sola settimana. Sei mesi se l'app è approvata, ma siccome non
+è neanche web, non ha nessuna possibilità di esserlo. 
+Il post del blog è bello per vedere un risultato, ma rappresenta uno scenario non reale,
+in quanto non posso certo aggiornare manualmente un token nella dev-console ogni 7 giorni,
+quando il report ha proprio questa scadenza.
+Lo scenario di una applicazione web è quello di chiedere all'utente un'autorizzazione 
+via web che ritorna al link dell'app una volta concessa.
+
+Per un service senza web interface come questo _crawler_ non è la soluzione corretta.
+Quindi proviamo ad usare un service account che manda un token JWT in cambio riceve 
+un auth token da usare subito senza refresh.
+LA documentazione si trova su: https://developers.google.com/identity/protocols/oauth2/service-account#httprest
+
+
+
 

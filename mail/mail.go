@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aaaasmile/crawler/conf"
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
 	"golang.org/x/oauth2"
@@ -26,16 +27,18 @@ import (
 )
 
 type MailSender struct {
-	liteDB       *db.LiteDB
-	gmailService *gmail.Service
-	secret       *db.Secret
-	simulate     bool
+	liteDB         *db.LiteDB
+	gmailService   *gmail.Service
+	secret         *db.Secret
+	serviceAccount *conf.ServiceAccount
+	simulate       bool
 }
 
-func NewMailSender(ld *db.LiteDB, simulate bool) *MailSender {
+func NewMailSender(ld *db.LiteDB, sa *conf.ServiceAccount, simulate bool) *MailSender {
 	ms := MailSender{
-		liteDB:   ld,
-		simulate: simulate,
+		liteDB:         ld,
+		simulate:       simulate,
+		serviceAccount: sa,
 	}
 	return &ms
 }
@@ -111,7 +114,9 @@ func (ms *MailSender) oAuthGmailService(accessToken, refreshToken string) error 
 
 func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
 	log.Println("Send e-mail with gmail service using multipart. Charts: ", len(listsrc))
-
+	if ms.gmailService == nil {
+		return fmt.Errorf("Gmail service was not authorized and created")
+	}
 	bound1 := randomBoundary()
 	bound2 := randomBoundary()
 

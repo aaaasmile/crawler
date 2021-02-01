@@ -26,6 +26,7 @@ type CrawlerOfChart struct {
 	serverURI   string
 	Simulate    bool
 	ResendEmail bool
+	UseDBToken  bool
 }
 
 type InfoChart struct {
@@ -257,13 +258,18 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
 
-	mm := mail.NewMailSender(cc.liteDB, cc.Simulate)
+	mm := mail.NewMailSender(cc.liteDB, conf.Current.ServiceAccount, cc.Simulate)
 
 	if err := mm.FetchSecretFromDb(); err != nil {
 		return err
 	}
-	if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
-		return err
+	if cc.UseDBToken {
+		log.Println("Using token stored into the db (aka manually created and copied there)")
+		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
+			return err
+		}
+	} else {
+		log.Println("JWT auth. please do it...")
 	}
 
 	templFileName := "templates/chart-mail.html"
