@@ -38,15 +38,18 @@ type InfoChart struct {
 }
 
 func (cc *CrawlerOfChart) Start(configfile string) error {
-	conf.ReadConfig(configfile)
+	current, err := conf.ReadConfig(configfile)
+	if err != nil {
+		return err
+	}
 	log.Println("Configuration is read")
 
 	cc.list = make([]*idl.ChartInfo, 0)
 	cc.liteDB = &db.LiteDB{
-		DebugSQL:     conf.Current.DebugSQL,
-		SqliteDBPath: conf.Current.DBPath,
+		DebugSQL:     current.DebugSQL,
+		SqliteDBPath: current.DBPath,
 	}
-	cc.serverURI = conf.Current.ServerURI
+	cc.serverURI = current.ServerURI
 
 	if err := cc.liteDB.OpenSqliteDatabase(); err != nil {
 		return err
@@ -254,8 +257,12 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
 
-	mm, err := mail.NewMailSender(cc.liteDB, cc.Simulate)
-	if err != nil {
+	mm := mail.NewMailSender(cc.liteDB, cc.Simulate)
+
+	if err := mm.FetchSecretFromDb(); err != nil {
+		return err
+	}
+	if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
 		return err
 	}
 

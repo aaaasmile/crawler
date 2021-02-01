@@ -32,28 +32,41 @@ type MailSender struct {
 	simulate     bool
 }
 
-func NewMailSender(ld *db.LiteDB, simulate bool) (*MailSender, error) {
+func NewMailSender(ld *db.LiteDB, simulate bool) *MailSender {
 	ms := MailSender{
 		liteDB:   ld,
 		simulate: simulate,
 	}
+	return &ms
+}
+
+func (ms *MailSender) FetchSecretFromDb() error {
 	secr, err := ms.liteDB.FetchSecret()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	log.Println("Secrets: ", secr)
 	if len(secr) != 1 {
-		return nil, fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
-	}
-	ms.secret = &secr[0]
-	if err := ms.oAuthGmailService(); err != nil {
-		return nil, err
+		return fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
 	}
 
-	return &ms, nil
+	ms.secret = &secr[0]
+	return nil
 }
 
-func (ms *MailSender) oAuthGmailService() error {
+func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
+	accessToken := ms.secret.AccessToken
+	if accessToken == "" {
+		accessToken = ms.secret.AuthToken
+	}
+
+	if err := ms.oAuthGmailService(accessToken, ms.secret.RefreshToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ms *MailSender) oAuthGmailService(accessToken, refreshToken string) error {
 	log.Println("Authorize with oauth")
 	config := oauth2.Config{
 		ClientID:     ms.secret.ClientID,
@@ -62,15 +75,11 @@ func (ms *MailSender) oAuthGmailService() error {
 		RedirectURL:  "http://localhost",
 	}
 
-	accessToken := ms.secret.AccessToken
-	if accessToken == "" {
-		accessToken = ms.secret.AuthToken
-	}
 	log.Println("Using access token: ", accessToken)
 
 	token := oauth2.Token{
 		AccessToken:  accessToken,
-		RefreshToken: ms.secret.RefreshToken,
+		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		Expiry:       time.Now(),
 	}
@@ -81,18 +90,8 @@ func (ms *MailSender) oAuthGmailService() error {
 	if err != nil {
 		return err
 	}
-	log.Println("Here the updated token. Refresh ", tokenUpdated.RefreshToken)
-	log.Println("Here the updated token. AccessToken ", tokenUpdated.AccessToken)
-	var at, rt = true, true
-	if ms.secret.RefreshToken == tokenUpdated.RefreshToken {
-		log.Println("Refresh token doesn't changed")
-		rt = false
-	}
-	if ms.secret.AccessToken == tokenUpdated.AccessToken {
-		log.Println("Access token doesn't changed")
-		at = false
-	}
-	if at || rt {
+	if ms.secret.AccessToken != tokenUpdated.AccessToken {
+		log.Println("Access token updated")
 		log.Println("Update secret in db")
 		if _, err := ms.liteDB.UpdateSecret(ms.secret.ID, tokenUpdated.AccessToken, tokenUpdated.RefreshToken); err != nil {
 			return err
