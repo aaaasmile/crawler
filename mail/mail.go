@@ -12,8 +12,11 @@ import (
 	"log"
 	mathrand "math/rand"
 	"mime"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,7 +68,36 @@ func (ms *MailSender) AuthGmailServiceWithJWT() error {
 	if err != nil {
 		return err
 	}
-	log.Fatal(tk)
+
+	// Try to do this request
+	// POST /token HTTP/1.1
+	// Host: oauth2.googleapis.com
+	// Content-Type: application/x-www-form-urlencoded
+	// grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiIsInR
+
+	client := &http.Client{}
+	data := url.Values{}
+	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+	data.Set("assertion", tk)
+
+	req, err := http.NewRequest("POST", ms.serviceAccount.TokenURI, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", `application/x-www-form-urlencoded`)
+	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	bodyraw, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Fatal(string(bodyraw))
 
 	return ms.oAuthGmailService(accessToken, "")
 }
@@ -78,7 +110,7 @@ func (ms *MailSender) getJWTToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("** Signing key %q \n", mySigningKey)
+	//fmt.Printf("** Signing key %q \n", mySigningKey)
 
 	iat := time.Now()
 	strForSec := "3000s"
@@ -88,8 +120,9 @@ func (ms *MailSender) getJWTToken() (string, error) {
 	var claims jwt.MapClaims
 	claims = jwt.MapClaims{
 		"iss":   ms.serviceAccount.ClientMail,
-		"sub":   ms.secret.Email,
-		"scope": "https://mail.google.com",
+		"sub":   ms.serviceAccount.ClientMail,
+		"scope": "https://www.googleapis.com/auth/gmail.send",
+		"aud":   ms.serviceAccount.TokenURI,
 		"exp":   exp.Unix(),
 		"iat":   iat.Unix(),
 	}
@@ -105,7 +138,6 @@ func (ms *MailSender) getJWTToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	tk, err := token.SignedString(mySigningKey)
 	return tk, err
-
 }
 
 func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
