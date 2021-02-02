@@ -51,6 +51,10 @@ Quindi proviamo ad usare un service account che manda un token JWT in cambio ric
 un auth token da usare subito senza refresh.
 LA documentazione si trova su: https://developers.google.com/identity/protocols/oauth2/service-account#httprest
 
+Purtroppo anche il Service Account non sembra avere molta fortuna senza avere un 
+account aziendale. Arrivo a generare il JWt, l'access token, ma al momento di mandare 
+la mail, questo errore abbastanza decisivo appare:
+ _googleapi: Error 400: Precondition check failed., failedPrecondition_
 
 
 

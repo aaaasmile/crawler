@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -36,6 +37,7 @@ type MailSender struct {
 	secret         *db.Secret
 	serviceAccount *conf.ServiceAccount
 	simulate       bool
+	emailSender    string
 }
 
 func NewMailSender(ld *db.LiteDB, sa *conf.ServiceAccount, simulate bool) *MailSender {
@@ -63,7 +65,6 @@ func (ms *MailSender) FetchSecretFromDb() error {
 
 func (ms *MailSender) AuthGmailServiceWithJWT() error {
 	log.Println("Request access token via JWT")
-	accessToken := ""
 	tk, err := ms.getJWTToken()
 	if err != nil {
 		return err
@@ -92,14 +93,50 @@ func (ms *MailSender) AuthGmailServiceWithJWT() error {
 		return err
 	}
 	defer resp.Body.Close()
-	bodyraw, err := ioutil.ReadAll(resp.Body)
+	rawbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	log.Fatal(string(bodyraw))
+	accessTokenDef := struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn   int    `json:"expires_in"`
+		TokenType   string `json:"token_type"`
+	}{}
 
-	return ms.oAuthGmailService(accessToken, "")
+	if err := json.Unmarshal(rawbody, &accessTokenDef); err != nil {
+		return err
+	}
+	log.Println("Received auth token from jwt ", accessTokenDef)
+
+	config := oauth2.Config{
+		ClientID:     ms.secret.ClientID,
+		ClientSecret: ms.secret.ClientSecret,
+		Endpoint:     google.Endpoint,
+		RedirectURL:  "http://localhost",
+	}
+
+	exp := time.Now()
+	exp = exp.Add(time.Second * time.Duration(accessTokenDef.ExpiresIn))
+	token := oauth2.Token{
+		AccessToken: accessTokenDef.AccessToken,
+		TokenType:   "Bearer",
+		Expiry:      exp,
+	}
+
+	var tokenSource = config.TokenSource(context.Background(), &token)
+
+	srv, err := gmail.NewService(context.Background(), option.WithTokenSource(tokenSource))
+	if err != nil {
+		log.Printf("Unable to retrieve Gmail client: %v", err)
+		return err
+	}
+
+	ms.gmailService = srv
+	log.Println("Email service is initialized")
+
+	ms.emailSender = ms.serviceAccount.ClientMail
+	return nil
 }
 
 func (ms *MailSender) getJWTToken() (string, error) {
@@ -146,6 +183,8 @@ func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
 	if accessToken == "" {
 		accessToken = ms.secret.AuthToken
 	}
+
+	ms.emailSender = ms.secret.Email
 
 	return ms.oAuthGmailService(accessToken, ms.secret.RefreshToken)
 }
@@ -255,7 +294,7 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 	msg := &bytes.Buffer{}
 	msg.Write([]byte("MIME-version: 1.0;\r\n"))
 	partSubj.WriteTo(msg)
-	msg.Write([]byte("To: " + ms.secret.Email + "\r\n"))
+	msg.Write([]byte("To: " + ms.emailSender + "\r\n"))
 	msg.Write([]byte("Content-Type:  multipart/related; boundary=" + `"` + bound1 + `"` + "\r\n"))
 	msg.Write([]byte("\r\n"))
 
