@@ -21,12 +21,13 @@ import (
 )
 
 type CrawlerOfChart struct {
-	liteDB      *db.LiteDB
-	list        []*idl.ChartInfo
-	serverURI   string
-	Simulate    bool
-	ResendEmail bool
-	UseDBToken  bool
+	liteDB            *db.LiteDB
+	list              []*idl.ChartInfo
+	serverURI         string
+	Simulate          bool
+	ResendEmail       bool
+	UseDBToken        bool
+	UseServiceAccount bool
 }
 
 type InfoChart struct {
@@ -263,6 +264,19 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 	if err := mm.FetchSecretFromDb(); err != nil {
 		return err
 	}
+	if cc.UseDBToken || cc.UseServiceAccount {
+		return cc.sendMailWithGoogle(mm)
+	}
+	return cc.sendMailWithRelay(mm)
+
+}
+func (cc *CrawlerOfChart) sendMailWithRelay(mm *mail.MailSender) error {
+	log.Println("Using relay to send the mail")
+
+	return nil
+}
+func (cc *CrawlerOfChart) sendMailWithGoogle(mm *mail.MailSender) error {
+	log.Println("Using google services to send the mail")
 	if cc.UseDBToken {
 		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
 			return err

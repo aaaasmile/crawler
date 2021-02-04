@@ -49,12 +49,18 @@ via web che ritorna al link dell'app una volta concessa.
 Per un service senza web interface come questo _crawler_ non è la soluzione corretta.
 Quindi proviamo ad usare un service account che manda un token JWT in cambio riceve 
 un auth token da usare subito senza refresh.
-LA documentazione si trova su: https://developers.google.com/identity/protocols/oauth2/service-account#httprest
+La documentazione si trova su: https://developers.google.com/identity/protocols/oauth2/service-account#httprest
 
 Purtroppo anche il Service Account non sembra avere molta fortuna senza avere un 
 account aziendale. Arrivo a generare il JWt, l'access token, ma al momento di mandare 
 la mail, questo errore abbastanza decisivo appare:
- _googleapi: Error 400: Precondition check failed., failedPrecondition_
+ _googleapi: Error 400: Precondition check failed., failedPrecondition_  
+Alla fine la mia impressione è gmail a livello gratuito non vuole garantire service continui
+che non abbiano interazione con la pagina di gmail, sia solo per dare la conferma dell'accesso.
 
 
+## Email Relay su invido.it
+Ho settato un service smtp di relay che non è affatto male in quanto usa un account
+come gmx molto affidabile per l'invio delle mail usando tls.
+Per vedere come si manda la mail vedi D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
 

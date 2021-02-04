@@ -26,6 +26,9 @@ type Secret struct {
 	AccessToken  string
 	RefreshToken string
 	Email        string
+	RelayMail    string
+	RelaySecret  string
+	RelayHost    string
 }
 
 type Price struct {
@@ -65,13 +68,16 @@ func getRealFromString(s string) float64 {
 	return res
 }
 
-func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at sql.NullString) {
+func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost sql.NullString) {
 	sc.ClientID = nullStrToStr(ci)
 	sc.ClientSecret = nullStrToStr(cs)
 	sc.AuthToken = nullStrToStr(aut)
 	sc.RefreshToken = nullStrToStr(rt)
 	sc.Email = nullStrToStr(em)
 	sc.AccessToken = nullStrToStr(at)
+	sc.RelayHost = nullStrToStr(relayhost)
+	sc.RelayMail = nullStrToStr(relaymail)
+	sc.RelaySecret = nullStrToStr(realaysecret)
 }
 
 func (si *StockInfo) FromNullString(isin, cu, na, des, mor sql.NullString) {
@@ -97,7 +103,7 @@ func (ld *LiteDB) OpenSqliteDatabase() error {
 }
 
 func (ld *LiteDB) FetchSecret() ([]Secret, error) {
-	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email,accesstoken
+	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email,accesstoken,relaymail,realaysecret,relayhost
 		  FROM secrets
 		  LIMIT 1;`
 	q = fmt.Sprintf(q)
@@ -111,16 +117,16 @@ func (ld *LiteDB) FetchSecret() ([]Secret, error) {
 	}
 
 	var ci, cs, aut, rt, em, at sql.NullString
-
+	var relaymail, realaysecret, relayhost sql.NullString
 	defer rows.Close()
 	res := make([]Secret, 0)
 	for rows.Next() {
 		item := Secret{}
 		if err := rows.Scan(&item.ID, &ci, &cs,
-			&aut, &rt, &em, &at); err != nil {
+			&aut, &rt, &em, &at, &relaymail, &realaysecret, &relayhost); err != nil {
 			return nil, err
 		}
-		item.FromNullString(ci, cs, aut, rt, em, at)
+		item.FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost)
 		res = append(res, item)
 	}
 	return res, nil

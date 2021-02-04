@@ -237,6 +237,33 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 	if ms.gmailService == nil {
 		return fmt.Errorf("Gmail service was not authorized and created")
 	}
+
+	msg, err := ms.buildEmailMsg(templFileName, listsrc)
+	if err != nil {
+		return err
+	}
+
+	var message gmail.Message
+	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
+
+	if !ms.simulate {
+		if _, err := ms.gmailService.Users.Messages.Send("me", &message).Do(); err != nil {
+			return err
+		}
+
+		log.Println("E-Mail is on the way. Everything is going well.")
+	} else {
+		log.Printf("Simulate Mail sent")
+	}
+	return nil
+}
+
+func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.ChartInfo) error {
+	log.Println("Send email using relay")
+	return nil
+}
+
+func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartInfo) (*bytes.Buffer, error) {
 	bound1 := randomBoundary()
 	bound2 := randomBoundary()
 
@@ -279,17 +306,15 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 	var partHTMLCont, partSubj, partPlainContent bytes.Buffer
 	tmplBodyMail := template.Must(template.New("MailBody").ParseFiles(templFileName))
 	if err := tmplBodyMail.ExecuteTemplate(&partHTMLCont, "mailbody", ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := tmplBodyMail.ExecuteTemplate(&partSubj, "mailSubj", list); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := tmplBodyMail.ExecuteTemplate(&partPlainContent, "mailPlain", list); err != nil {
-		return err
+		return nil, err
 	}
-
-	var message gmail.Message
 
 	msg := &bytes.Buffer{}
 	msg.Write([]byte("MIME-version: 1.0;\r\n"))
@@ -327,19 +352,7 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 		fmt.Printf("Message is: \n%s\n", ss)
 	}
 
-	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
-
-	if !ms.simulate {
-		if _, err := ms.gmailService.Users.Messages.Send("me", &message).Do(); err != nil {
-			return err
-		}
-
-		log.Println("E-Mail is on the way. Everything is going well.")
-	} else {
-		log.Printf("Simulate Mail sent")
-	}
-
-	return nil
+	return msg, nil
 }
 
 func embedImgFile(fullname string, w *bytes.Buffer, boundary string) (string, error) {

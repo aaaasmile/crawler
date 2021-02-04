@@ -1,15 +1,4 @@
 BEGIN TRANSACTION;
-DROP TABLE IF EXISTS "secrets";
-CREATE TABLE IF NOT EXISTS "secrets" (
-	"id"	INTEGER NOT NULL,
-	"clientid"	TEXT,
-	"clientsecret"	TEXT,
-	"authtoken"	TEXT,
-	"refreshtoken"	TEXT,
-	"email"	TEXT,
-	"accesstoken"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
 DROP TABLE IF EXISTS "price";
 CREATE TABLE IF NOT EXISTS "price" (
 	"id"	INTEGER NOT NULL,
@@ -29,6 +18,20 @@ CREATE TABLE IF NOT EXISTS "stockinfo" (
 	"moreinfourl"	TEXT,
 	"cost"	REAL,
 	"quantity"	REAL,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "secrets";
+CREATE TABLE IF NOT EXISTS "secrets" (
+	"id"	INTEGER NOT NULL,
+	"clientid"	TEXT,
+	"clientsecret"	TEXT,
+	"authtoken"	TEXT,
+	"refreshtoken"	TEXT,
+	"email"	TEXT,
+	"accesstoken"	TEXT,
+	"relaymail"	TEXT,
+	"realaysecret"	TEXT,
+	"relayhost"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 COMMIT;
