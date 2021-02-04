@@ -229,7 +229,9 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.ChartInfo) error {
 	log.Println("Send email using relay host")
 	ms.emailTo = ms.secret.Email
-	msg, err := ms.buildEmailMsg(templFileName, listsrc)
+	ms.emailFrom = ms.secret.RelayMail
+
+	mesg, err := ms.buildEmailMsg(templFileName, listsrc)
 	if err != nil {
 		return err
 	}
@@ -261,11 +263,11 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 		return err
 	}
 
-	//From
+	log.Println("send From")
 	if err = c.Mail(ms.secret.RelayMail); err != nil {
 		return err
 	}
-	// To
+	log.Println("send To")
 	if err = c.Rcpt(ms.secret.Email); err != nil {
 		return err
 	}
@@ -274,19 +276,19 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 	if err != nil {
 		return err
 	}
-	log.Println("Send the message to the relay. E-Mail is on the way. Everything is going well.")
-	_, err = w.Write(msg.Bytes())
+	log.Println("Send the message to the relay")
+	_, err = w.Write(mesg.Bytes())
 	if err != nil {
 		return err
 	}
-
+	log.Println("Close relay")
 	err = w.Close()
 	if err != nil {
 		return err
 	}
-
+	log.Println("Quit relay")
 	c.Quit()
-	log.Println("Message sent")
+	log.Println("E-Mail is on the way. Everything is going well.")
 
 	return nil
 }
