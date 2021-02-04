@@ -231,10 +231,11 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 	ms.emailTo = ms.secret.Email
 	ms.emailFrom = ms.secret.RelayMail
 
-	mesg, err := ms.buildEmailMsg(templFileName, listsrc)
+	message, err := ms.buildEmailMsg(templFileName, listsrc)
 	if err != nil {
 		return err
 	}
+	//message := base64.URLEncoding.EncodeToString(mesg.Bytes())
 
 	servername := ms.secret.RelayHost
 
@@ -277,7 +278,7 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 		return err
 	}
 	log.Println("Send the message to the relay")
-	_, err = w.Write(mesg.Bytes())
+	_, err = w.Write(message.Bytes())
 	if err != nil {
 		return err
 	}
@@ -369,7 +370,10 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	// html section
 	msg.Write([]byte("--" + bound2 + "\r\n"))
 	msg.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
-	partHTMLCont.WriteTo(msg)
+	msg.Write([]byte("Content-Transfer-Encoding: base64\r\n"))
+	msg.Write([]byte("\r\n"))
+	partHTMLCont64 := formatRFCRawWithEnc64(partHTMLCont.Bytes())
+	partHTMLCont64.WriteTo(msg)
 	msg.Write([]byte("\r\n"))
 	msg.Write([]byte("--" + bound2 + "--" + "\r\n"))
 
