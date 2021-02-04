@@ -7,7 +7,7 @@ I chart vengono scaricati e inviati con una mail usando gmail e auth.
 Le credential sono nel db
 
 Per mandare la Mail con gmail ho seguito questo post:
-https://medium.com/wesionary-team/sending-emails-with-go-golang-using-smtp-gmail-and-oauth2-185ee12ab306
+https://medium.com/wesionary-team/sending-emails-with-go-golang-using-smtp-gmail-and-oauth2-185ee12ab306  
 
 Settare tutte le credential è davvero complesso. 
 I 2 token (AuthCode e RefreshToken) li ho creati qui:
@@ -33,7 +33,7 @@ La parte più difficoltosa è stata la pagina di consent, dove solo alla fine ho
 https://console.cloud.google.com/apis/credentials/consent?project=mailcharter
 
 
-Però la Mail di prova funziona a meraviglia.
+Però la Mail di prova, con il token manuale valido 7 giorni, funziona a meraviglia.
 
 ## Refresh Token
 Dopo una lettura della documentazione https://developers.google.com/identity/protocols/oauth2
@@ -60,7 +60,14 @@ che non abbiano interazione con la pagina di gmail, sia solo per dare la conferm
 
 
 ## Email Relay su invido.it
-Ho settato un service smtp di relay che non è affatto male in quanto usa un account
+Ho settato un service smtp di relay che non è affatto male in quanto usa un account (https://github.com/aaaasmile/mailrelay-invido)
 come gmx molto affidabile per l'invio delle mail usando tls.
-Per vedere come si manda la mail vedi D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
+Per vedere come si manda la mail vedi  
+D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
 
+Mandare le mail con il relay ha avuto delle trappole, tipo la codifica
+delle apici da parte del server gmx. Questo ha distrutto in gran parte 
+il formato html della mail.  
+L'ho risolto codificando il contenuto della mail html in formato rfcbase64.
+Da notare che la codifica di tutto il messaggio non funziona, ma si possono 
+codificare solo le sezioni.
