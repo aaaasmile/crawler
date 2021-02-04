@@ -265,17 +265,22 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 		return err
 	}
 	if cc.UseDBToken || cc.UseServiceAccount {
-		return cc.sendMailWithGoogle(mm)
+		return cc.sendMailViaGoogle(mm)
 	}
-	return cc.sendMailWithRelay(mm)
+	return cc.sendMailViaRelay(mm)
 
 }
-func (cc *CrawlerOfChart) sendMailWithRelay(mm *mail.MailSender) error {
+func (cc *CrawlerOfChart) sendMailViaRelay(mm *mail.MailSender) error {
 	log.Println("Using relay to send the mail")
+
+	templFileName := "templates/chart-mail.html"
+	if err := mm.SendEmailViaRelay(templFileName, cc.list); err != nil {
+		return err
+	}
 
 	return nil
 }
-func (cc *CrawlerOfChart) sendMailWithGoogle(mm *mail.MailSender) error {
+func (cc *CrawlerOfChart) sendMailViaGoogle(mm *mail.MailSender) error {
 	log.Println("Using google services to send the mail")
 	if cc.UseDBToken {
 		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {

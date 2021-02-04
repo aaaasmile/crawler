@@ -29,6 +29,7 @@ type Secret struct {
 	RelayMail    string
 	RelaySecret  string
 	RelayHost    string
+	RelayUser    string
 }
 
 type Price struct {
@@ -68,7 +69,7 @@ func getRealFromString(s string) float64 {
 	return res
 }
 
-func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost sql.NullString) {
+func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost, relayuser sql.NullString) {
 	sc.ClientID = nullStrToStr(ci)
 	sc.ClientSecret = nullStrToStr(cs)
 	sc.AuthToken = nullStrToStr(aut)
@@ -78,6 +79,7 @@ func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecre
 	sc.RelayHost = nullStrToStr(relayhost)
 	sc.RelayMail = nullStrToStr(relaymail)
 	sc.RelaySecret = nullStrToStr(realaysecret)
+	sc.RelayUser = nullStrToStr(relayuser)
 }
 
 func (si *StockInfo) FromNullString(isin, cu, na, des, mor sql.NullString) {
@@ -103,7 +105,7 @@ func (ld *LiteDB) OpenSqliteDatabase() error {
 }
 
 func (ld *LiteDB) FetchSecret() ([]Secret, error) {
-	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email,accesstoken,relaymail,realaysecret,relayhost
+	q := `SELECT id,clientid,clientsecret,authtoken,refreshtoken,email,accesstoken,relaymail,realaysecret,relayhost,relayuser
 		  FROM secrets
 		  LIMIT 1;`
 	q = fmt.Sprintf(q)
@@ -117,16 +119,16 @@ func (ld *LiteDB) FetchSecret() ([]Secret, error) {
 	}
 
 	var ci, cs, aut, rt, em, at sql.NullString
-	var relaymail, realaysecret, relayhost sql.NullString
+	var relaymail, realaysecret, relayhost, relayuser sql.NullString
 	defer rows.Close()
 	res := make([]Secret, 0)
 	for rows.Next() {
 		item := Secret{}
 		if err := rows.Scan(&item.ID, &ci, &cs,
-			&aut, &rt, &em, &at, &relaymail, &realaysecret, &relayhost); err != nil {
+			&aut, &rt, &em, &at, &relaymail, &realaysecret, &relayhost, &relayuser); err != nil {
 			return nil, err
 		}
-		item.FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost)
+		item.FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecret, relayhost, relayuser)
 		res = append(res, item)
 	}
 	return res, nil

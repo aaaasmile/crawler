@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,9 @@ import (
 	"log"
 	mathrand "math/rand"
 	"mime"
+	"net"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -37,7 +40,8 @@ type MailSender struct {
 	secret         *db.Secret
 	serviceAccount *conf.ServiceAccount
 	simulate       bool
-	emailSender    string
+	emailTo        string
+	emailFrom      string
 }
 
 func NewMailSender(ld *db.LiteDB, sa *conf.ServiceAccount, simulate bool) *MailSender {
@@ -135,46 +139,9 @@ func (ms *MailSender) AuthGmailServiceWithJWT() error {
 	ms.gmailService = srv
 	log.Println("Email service is initialized")
 
-	ms.emailSender = ms.serviceAccount.ClientMail
+	ms.emailTo = ms.secret.Email
+	ms.emailFrom = ""
 	return nil
-}
-
-func (ms *MailSender) getJWTToken() (string, error) {
-	log.Println("Create JWT Using key id: ", ms.serviceAccount.PrivateKeyID)
-	keyB := []byte(ms.serviceAccount.PrivateKey)
-
-	mySigningKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyB)
-	if err != nil {
-		return "", err
-	}
-	//fmt.Printf("** Signing key %q \n", mySigningKey)
-
-	iat := time.Now()
-	strForSec := "3000s"
-	log.Printf("JWT will Expire in %s seconds\n", strForSec)
-	duration, _ := time.ParseDuration(strForSec)
-	exp := iat.Add(duration)
-	var claims jwt.MapClaims
-	claims = jwt.MapClaims{
-		"iss":   ms.serviceAccount.ClientMail,
-		"sub":   ms.serviceAccount.ClientMail,
-		"scope": "https://www.googleapis.com/auth/gmail.send",
-		"aud":   ms.serviceAccount.TokenURI,
-		"exp":   exp.Unix(),
-		"iat":   iat.Unix(),
-	}
-	log.Println("Using claim", claims)
-
-	// "iss": "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer.gserviceaccount.com",
-	// "sub": "some.user@example.com",
-	// "scope": "https://www.googleapis.com/auth/prediction",
-	// "aud": "https://oauth2.googleapis.com/token",
-	// "exp": 1328554385,
-	// "iat": 1328550785
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	tk, err := token.SignedString(mySigningKey)
-	return tk, err
 }
 
 func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
@@ -184,7 +151,8 @@ func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
 		accessToken = ms.secret.AuthToken
 	}
 
-	ms.emailSender = ms.secret.Email
+	ms.emailTo = ms.secret.Email
+	ms.emailFrom = "" // gmail will set it
 
 	return ms.oAuthGmailService(accessToken, ms.secret.RefreshToken)
 }
@@ -259,7 +227,67 @@ func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.Ch
 }
 
 func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.ChartInfo) error {
-	log.Println("Send email using relay")
+	log.Println("Send email using relay host")
+	ms.emailTo = ms.secret.Email
+	msg, err := ms.buildEmailMsg(templFileName, listsrc)
+	if err != nil {
+		return err
+	}
+
+	servername := ms.secret.RelayHost
+
+	host, _, _ := net.SplitHostPort(servername)
+
+	auth := smtp.PlainAuth("", ms.secret.RelayUser, ms.secret.RelaySecret, host)
+
+	tlsconfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         host,
+	}
+
+	log.Println("Dial server ", servername)
+	conn, err := tls.Dial("tcp", servername, tlsconfig)
+	if err != nil {
+		return err
+	}
+
+	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Send smtp Auth")
+	if err = c.Auth(auth); err != nil {
+		return err
+	}
+
+	//From
+	if err = c.Mail(ms.secret.RelayMail); err != nil {
+		return err
+	}
+	// To
+	if err = c.Rcpt(ms.secret.Email); err != nil {
+		return err
+	}
+
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	log.Println("Send the message to the relay. E-Mail is on the way. Everything is going well.")
+	_, err = w.Write(msg.Bytes())
+	if err != nil {
+		return err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
+	c.Quit()
+	log.Println("Message sent")
+
 	return nil
 }
 
@@ -319,7 +347,10 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	msg := &bytes.Buffer{}
 	msg.Write([]byte("MIME-version: 1.0;\r\n"))
 	partSubj.WriteTo(msg)
-	msg.Write([]byte("To: " + ms.emailSender + "\r\n"))
+	if ms.emailFrom != "" {
+		msg.Write([]byte("From: " + ms.emailFrom + "\r\n"))
+	}
+	msg.Write([]byte("To: " + ms.emailTo + "\r\n"))
 	msg.Write([]byte("Content-Type:  multipart/related; boundary=" + `"` + bound1 + `"` + "\r\n"))
 	msg.Write([]byte("\r\n"))
 
@@ -440,4 +471,42 @@ func randomIdAscii(size int) string {
 		buf = append(buf, byte(set[ixrnd]))
 	}
 	return string(buf)
+}
+
+func (ms *MailSender) getJWTToken() (string, error) {
+	log.Println("Create JWT Using key id: ", ms.serviceAccount.PrivateKeyID)
+	keyB := []byte(ms.serviceAccount.PrivateKey)
+
+	mySigningKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyB)
+	if err != nil {
+		return "", err
+	}
+	//fmt.Printf("** Signing key %q \n", mySigningKey)
+
+	iat := time.Now()
+	strForSec := "3000s"
+	log.Printf("JWT will Expire in %s seconds\n", strForSec)
+	duration, _ := time.ParseDuration(strForSec)
+	exp := iat.Add(duration)
+	var claims jwt.MapClaims
+	claims = jwt.MapClaims{
+		"iss":   ms.serviceAccount.ClientMail,
+		"sub":   ms.serviceAccount.ClientMail,
+		"scope": "https://www.googleapis.com/auth/gmail.send",
+		"aud":   ms.serviceAccount.TokenURI,
+		"exp":   exp.Unix(),
+		"iat":   iat.Unix(),
+	}
+	log.Println("Using claim", claims)
+
+	// "iss": "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer.gserviceaccount.com",
+	// "sub": "some.user@example.com",
+	// "scope": "https://www.googleapis.com/auth/prediction",
+	// "aud": "https://oauth2.googleapis.com/token",
+	// "exp": 1328554385,
+	// "iat": 1328550785
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tk, err := token.SignedString(mySigningKey)
+	return tk, err
 }
