@@ -245,6 +245,7 @@ func (ld *LiteDB) FetchPreviosPriceInStock(idstock int64, timestampLatest int64)
 	q := `SELECT id,price,timestamp,idstock
 		  FROM price
 		  WHERE idstock=%d AND timestamp<%d
+		  ORDER BY id DESC
 		  LIMIT 1;`
 	q = fmt.Sprintf(q, idstock, timestampLatest)
 	if ld.DebugSQL {

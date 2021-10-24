@@ -2,9 +2,46 @@
 Programma che uso per ricevere una mail settimanale con i chart dei miei indici.
 Nel database sqlite metto dentro tutte le info degli ISNI ed
 eseguo un crawler sul sito dei chart. 
-I chart vengono scaricati e inviati con una mail usando gmail e auth.
+I chart vengono scaricati e inviati con una mail usando relay di invido.it.
 
 Le credential sono nel db
+
+## Deployment
+Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
+Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
+28 18 * * 5  cd /home/igors/projects/go/crawler && ./crawler.bin > /tmp/crawler.log
+Per fare andare crontab -e bisogna lanciare sudo raspi-config e settare la time zone.
+Dopo un reboot crontab -e funziona.
+
+## Aggiornare il programma
+Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
+poi con la legacy console:
+ssh pi3-hole
+cd /home/igors/projects/go/crawler
+git pull
+go build
+
+Per avere il db in locale dal target:
+rsync -chavzP --stats igors@pi3:/home/igors/projects/go/crawler/chart-info.db . 
+
+## Email Relay su invido.it
+Ho settato un service smtp di relay che non è affatto male in quanto usa un account (https://github.com/aaaasmile/mailrelay-invido)
+come gmx molto affidabile per l'invio delle mail usando tls.
+Per vedere come si manda la mail vedi  
+D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
+
+Mandare le mail con il relay ha avuto delle trappole, tipo la codifica
+delle apici da parte del server gmx. Questo ha distrutto in gran parte 
+il formato html della mail.  
+L'ho risolto codificando il contenuto della mail html in formato rfcbase64.
+Da notare che la codifica di tutto il messaggio non funziona, ma si possono 
+codificare solo le sezioni.
+
+Nota che per usare il relay di invido, le credential sono nel db. Secret File json 
+viene usato solo per google.
+
+
+## Mandare le mail con google (non usato)
 
 Per mandare la Mail con gmail ho seguito questo post:
 https://medium.com/wesionary-team/sending-emails-with-go-golang-using-smtp-gmail-and-oauth2-185ee12ab306  
@@ -35,7 +72,7 @@ https://console.cloud.google.com/apis/credentials/consent?project=mailcharter
 
 Però la Mail di prova, con il token manuale valido 7 giorni, funziona a meraviglia.
 
-## Refresh Token
+## Refresh Token di google (non usato)
 Dopo una lettura della documentazione https://developers.google.com/identity/protocols/oauth2
 risulta chiaro che un'applicazione che dovrebbe essere web, ma destinata a rimanere in fase di test,
 ha un refresh toke valido per una sola settimana. Sei mesi se l'app è approvata, ma siccome non
@@ -58,16 +95,3 @@ la mail, questo errore abbastanza decisivo appare:
 Alla fine la mia impressione è gmail a livello gratuito non vuole garantire service continui
 che non abbiano interazione con la pagina di gmail, sia solo per dare la conferma dell'accesso.
 
-
-## Email Relay su invido.it
-Ho settato un service smtp di relay che non è affatto male in quanto usa un account (https://github.com/aaaasmile/mailrelay-invido)
-come gmx molto affidabile per l'invio delle mail usando tls.
-Per vedere come si manda la mail vedi  
-D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
-
-Mandare le mail con il relay ha avuto delle trappole, tipo la codifica
-delle apici da parte del server gmx. Questo ha distrutto in gran parte 
-il formato html della mail.  
-L'ho risolto codificando il contenuto della mail html in formato rfcbase64.
-Da notare che la codifica di tutto il messaggio non funziona, ma si possono 
-codificare solo le sezioni.
