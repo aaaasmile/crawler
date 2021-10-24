@@ -19,10 +19,14 @@ poi con la legacy console:
 ssh pi3-hole
 cd /home/igors/projects/go/crawler
 git pull
-go build
+go build -o crawler.bin
 
 Per avere il db in locale dal target:
 rsync -chavzP --stats igors@pi3:/home/igors/projects/go/crawler/chart-info.db . 
+Per rimetterlo indietro:
+rsync -chavzP --stats ./chart-info.db igors@pi3:/home/igors/projects/go/crawler/chart-info.db
+
+Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
 
 ## Email Relay su invido.it
 Ho settato un service smtp di relay che non è affatto male in quanto usa un account (https://github.com/aaaasmile/mailrelay-invido)
