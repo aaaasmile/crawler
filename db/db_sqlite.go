@@ -49,6 +49,7 @@ type StockInfo struct {
 	MoreInfoURL string
 	Quantity    float64
 	Cost        float64
+	SimpleDescr string
 }
 
 func nullStrToStr(ci sql.NullString) string {
@@ -82,12 +83,13 @@ func (sc *Secret) FromNullString(ci, cs, aut, rt, em, at, relaymail, realaysecre
 	sc.RelayUser = nullStrToStr(relayuser)
 }
 
-func (si *StockInfo) FromNullString(isin, cu, na, des, mor sql.NullString) {
+func (si *StockInfo) FromNullString(isin, cu, na, des, mor, sd sql.NullString) {
 	si.ISIN = nullStrToStr(isin)
 	si.ChartURL = nullStrToStr(cu)
 	si.Name = nullStrToStr(na)
 	si.Description = nullStrToStr(des)
 	si.MoreInfoURL = nullStrToStr(mor)
+	si.SimpleDescr = nullStrToStr(sd)
 }
 
 func (ld *LiteDB) OpenSqliteDatabase() error {
@@ -159,8 +161,9 @@ func (ld *LiteDB) UpdateSecret(ID int, accessToken, refreshToken string) (int64,
 }
 
 func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
-	q := `SELECT id,isin,charturl,name,description,moreinfourl,quantity,cost
+	q := `SELECT id,isin,charturl,name,description,moreinfourl,quantity,cost,simple
 		  FROM stockinfo
+		  WHERE disabled <> 1
 		  LIMIT %d;`
 	q = fmt.Sprintf(q, limit)
 	if ld.DebugSQL {
@@ -172,17 +175,17 @@ func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
 		return nil, err
 	}
 
-	var isin, cu, na, des, mor sql.NullString
+	var isin, cu, na, des, mor, sd sql.NullString
 
 	defer rows.Close()
 	res := make([]*StockInfo, 0)
 	for rows.Next() {
 		item := StockInfo{}
 		if err := rows.Scan(&item.ID, &isin, &cu,
-			&na, &des, &mor, &item.Quantity, &item.Cost); err != nil {
+			&na, &des, &mor, &item.Quantity, &item.Cost, &sd); err != nil {
 			return nil, err
 		}
-		item.FromNullString(isin, cu, na, des, mor)
+		item.FromNullString(isin, cu, na, des, mor, sd)
 		res = append(res, &item)
 	}
 	return res, nil

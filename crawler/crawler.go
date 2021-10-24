@@ -88,6 +88,7 @@ func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 		fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
 		chartItem.Description = v.Description
 		chartItem.MoreInfoURL = v.MoreInfoURL
+		chartItem.SimpleDescr = v.SimpleDescr
 		chartItem.ChartURL = v.ChartURL
 		chartItem.DownloadFilename = fileNameDst
 
@@ -153,6 +154,7 @@ loop:
 			if v, ok := mapStock[res.ID]; ok {
 				chartItem.Description = v.Description
 				chartItem.MoreInfoURL = v.MoreInfoURL
+				chartItem.SimpleDescr = v.SimpleDescr
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
 				if chartItem.PriceInfo != nil {

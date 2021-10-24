@@ -2,3 +2,4 @@ data/*.*
 chart-info.db
 crawler.exe
 secret/*.*
+*.db

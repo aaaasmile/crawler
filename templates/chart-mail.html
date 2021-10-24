@@ -8,6 +8,7 @@ Subject: Chart Depot
 
 <div>
     {{ range .ListOK }}
+    <div>{{.SimpleDescr}}</div>
     <div>{{.Description}}</div>
     <div>{{.CurrentPrice}} EUR, previous {{.PreviousPrice}} EUR, diff: {{.DiffPreviousPrice}} %</div>
     <div>Value: {{.TotCurrValue}} EUR, Cost: {{.TotCost}} EUR, Quantity: {{.Quantity}}</div>

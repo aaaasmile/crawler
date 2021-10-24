@@ -26,4 +26,5 @@ type ChartInfo struct {
 	TotCost           string
 	Quantity          string
 	ColorWL           string
+	SimpleDescr       string
 }
