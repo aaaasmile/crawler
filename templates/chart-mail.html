@@ -20,6 +20,21 @@ Subject: Chart Depot
     {{end}}
 </div>
 
+<p>Under observation:</p>
+<div>
+    {{ range .ListObservation }}
+    <div>{{.SimpleDescr}}</div>
+    <div>{{.Description}}</div>
+    <div>{{.CurrentPrice}} EUR, previous {{.PreviousPrice}} EUR, diff: {{.DiffPreviousPrice}} %</div>
+    <div>Value: {{.TotCurrValue}} EUR, Cost: {{.TotCost}} EUR, Quantity: {{.Quantity}}</div>
+    <div style="color: {{.ColorWL}};">W/L: {{.WinOrLoss}} EUR, {{.WinOrLossPerc}} %</div>
+    <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
+    <div><a href="{{.ChartURL}}">go to chart</a></div>
+    <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
+    <hr>
+    {{end}}
+</div>
+
 <div>
     {{ range .ListErr }}
     <div>{{.ErrorText}}</div>

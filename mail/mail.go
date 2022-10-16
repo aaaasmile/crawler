@@ -235,7 +235,10 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 	if err != nil {
 		return err
 	}
-	//message := base64.URLEncoding.EncodeToString(mesg.Bytes())
+	if ms.simulate {
+		log.Println("This is a simulation, e-mail si not sent")
+		return nil
+	}
 
 	servername := ms.secret.RelayHost
 
@@ -299,25 +302,30 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	bound2 := randomBoundary()
 
 	list := make([]*idl.ChartInfo, 0)
+	listObservation := make([]*idl.ChartInfo, 0)
 	listErr := make([]*idl.ChartInfo, 0)
 	imgBuf := &bytes.Buffer{}
 	for _, v := range listsrc {
 		if v.DownloadFilename == "" || v.HasError || v.ErrorText != "" {
 			log.Println("Wrong img: ", v)
-			listErr = append(list, v)
+			listErr = append(listErr, v)
 			continue
 		}
 		fname, err := embedImgFile(v.DownloadFilename, imgBuf, bound1)
 		if err != nil {
 			log.Println("Ignore image ", v, err)
 			v.ErrorText = err.Error()
-			listErr = append(list, v)
+			listErr = append(listErr, v)
 		} else {
 			v.ImgName = fname
-			list = append(list, v)
+			if v.Quantity == "" || v.Quantity == "0.0" || v.Quantity == "0" || v.Quantity == "0.00" {
+				listObservation = append(listObservation, v)
+			} else {
+				list = append(list, v)
+			}
 		}
 	}
-	if len(list) > 0 {
+	if len(list) > 0 || len(listErr) > 0 {
 		imgBuf.Write([]byte("--" + bound1 + "--"))
 	}
 	if len(listErr) == 0 {
@@ -327,11 +335,13 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	}
 
 	ctx := struct {
-		ListOK  []*idl.ChartInfo
-		ListErr []*idl.ChartInfo
+		ListOK          []*idl.ChartInfo
+		ListErr         []*idl.ChartInfo
+		ListObservation []*idl.ChartInfo
 	}{
-		ListOK:  list,
-		ListErr: listErr,
+		ListOK:          list,
+		ListErr:         listErr,
+		ListObservation: listObservation,
 	}
 
 	var partHTMLCont, partSubj, partPlainContent bytes.Buffer
@@ -382,7 +392,7 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 
 	if ms.simulate {
 		ss := msg.String()
-		maxchar := 1200
+		maxchar := 2000
 		if len(ss) > maxchar {
 			ss = ss[0:maxchar]
 		}

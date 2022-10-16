@@ -29,8 +29,7 @@ rsync -chavzP --stats ./chart-info.db igors@pi3:/home/igors/projects/go/crawler/
 Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
 
 ## Email Relay su invido.it
-Ho settato un service smtp di relay che non è affatto male in quanto usa un account (https://github.com/aaaasmile/mailrelay-invido)
-come gmx molto affidabile per l'invio delle mail usando tls.
+Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non è possibile, vedi sotto).
 Per vedere come si manda la mail vedi  
 D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
 
@@ -45,7 +44,7 @@ Nota che per usare il relay di invido, le credential sono nel db. Secret File js
 viene usato solo per google.
 
 
-## Mandare le mail con google (non usato)
+## Mandare le mail con google (idea abbandonata)
 
 Per mandare la Mail con gmail ho seguito questo post:
 https://medium.com/wesionary-team/sending-emails-with-go-golang-using-smtp-gmail-and-oauth2-185ee12ab306  
@@ -73,13 +72,12 @@ https://console.cloud.google.com/
 La parte più difficoltosa è stata la pagina di consent, dove solo alla fine ho potuto inserire un test user.
 https://console.cloud.google.com/apis/credentials/consent?project=mailcharter
 
-
 Però la Mail di prova, con il token manuale valido 7 giorni, funziona a meraviglia.
 
-## Refresh Token di google (non usato)
+## Refresh Token di google (non usato, idea abbandonata)
 Dopo una lettura della documentazione https://developers.google.com/identity/protocols/oauth2
-risulta chiaro che un'applicazione che dovrebbe essere web, ma destinata a rimanere in fase di test,
-ha un refresh toke valido per una sola settimana. Sei mesi se l'app è approvata, ma siccome non
+risulta chiaro che un'applicazione web, ma destinata a rimanere in fase di test,
+ha un refresh token valido per una sola settimana. Sei mesi se l'app è approvata, ma siccome non
 è neanche web, non ha nessuna possibilità di esserlo. 
 Il post del blog è bello per vedere un risultato, ma rappresenta uno scenario non reale,
 in quanto non posso certo aggiornare manualmente un token nella dev-console ogni 7 giorni,
@@ -94,8 +92,8 @@ La documentazione si trova su: https://developers.google.com/identity/protocols/
 
 Purtroppo anche il Service Account non sembra avere molta fortuna senza avere un 
 account aziendale. Arrivo a generare il JWt, l'access token, ma al momento di mandare 
-la mail, questo errore abbastanza decisivo appare:
+la mail, appare questo errore abbastanza decisivo :
  _googleapi: Error 400: Precondition check failed., failedPrecondition_  
-Alla fine la mia impressione è gmail a livello gratuito non vuole garantire service continui
-che non abbiano interazione con la pagina di gmail, sia solo per dare la conferma dell'accesso.
+Alla fine la mia impressione è che gmail a livello gratuito non vuole garantire servizi continui
+che non abbiano interazione con la pagina di gmail, anche solo per dare la conferma dell'accesso.
 
