@@ -65,9 +65,10 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 	if err := cc.insertPriceList(); err != nil {
 		return err
 	}
-	if err := cc.sendChartEmail(); err != nil {
-		return err
-	}
+	// TEST the fetch first and then enable the e-mail
+	// if err := cc.sendChartEmail(); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -76,7 +77,7 @@ func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 	log.Println("Build list from last download")
 
 	cc.list = make([]*idl.ChartInfo, 0)
-	stockList, err := cc.liteDB.FetchStockInfo(100)
+	stockList, err := cc.liteDB.SelectEnabledStockInfos(100)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 		cc.list = append(cc.list, &chartItem)
 	}
 
-	log.Println("Fetchart items", len(cc.list))
+	log.Println("Chart items are", len(cc.list))
 
 	return nil
 }
@@ -102,11 +103,11 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	log.Println("Build the chart list")
 	start := time.Now()
 	cc.list = make([]*idl.ChartInfo, 0)
-	stockList, err := cc.liteDB.FetchStockInfo(100)
+	stockList, err := cc.liteDB.SelectEnabledStockInfos(100)
 	if err != nil {
 		return err
 	}
-	log.Println("Found stocks ", len(stockList))
+	log.Println("Found stocks in DB ", len(stockList))
 
 	chRes := make(chan *InfoChart)
 	mapStock := make(map[int64]*db.StockInfo)
@@ -136,6 +137,7 @@ loop:
 			chartItem := idl.ChartInfo{ColorWL: "green"}
 			chartItem.HasError = res.Error != nil
 			if res.Error != nil {
+				log.Println("chartItem has an error", err)
 				chartItem.HasError = true
 				chartItem.ErrorText = res.Error.Error()
 			} else {
@@ -191,7 +193,7 @@ loop:
 	}
 	t := time.Now()
 	elapsed := t.Sub(start)
-	log.Printf("Fetchart items %d total call duration: %v\n", len(cc.list), elapsed)
+	log.Printf("buildTheChartList: items %d total call duration: %v\n", len(cc.list), elapsed)
 
 	return nil
 }
@@ -212,7 +214,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 			log.Println("WARN: no price info avalible for ", v)
 			continue
 		}
-		pps, err = cc.liteDB.FetchPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+		pps, err = cc.liteDB.SelectPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}
@@ -226,7 +228,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 		} else {
 			log.Println("Price already inserted", v.ID, v.PriceInfo.Price)
 		}
-		pps, err = cc.liteDB.FetchPreviosPriceInStock(v.ID, v.PriceInfo.TimestampInt)
+		pps, err = cc.liteDB.SelectPreviousPriceInStock(v.ID, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}

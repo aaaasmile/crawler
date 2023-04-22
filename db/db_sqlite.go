@@ -160,7 +160,7 @@ func (ld *LiteDB) UpdateSecret(ID int, accessToken, refreshToken string) (int64,
 
 }
 
-func (ld *LiteDB) FetchStockInfo(limit int) ([]*StockInfo, error) {
+func (ld *LiteDB) SelectEnabledStockInfos(limit int) ([]*StockInfo, error) {
 	q := `SELECT id,isin,charturl,name,description,moreinfourl,quantity,cost,simple
 		  FROM stockinfo
 		  WHERE disabled <> 1
@@ -232,7 +232,7 @@ func (ld *LiteDB) InsertPrice(tx *sql.Tx, idstock int64, price float64, timestam
 	return ressql.LastInsertId()
 }
 
-func (ld *LiteDB) FetchPrice(idstock int64, price float64, timestamp int64) ([]*Price, error) {
+func (ld *LiteDB) SelectPrice(idstock int64, price float64, timestamp int64) ([]*Price, error) {
 	q := `SELECT id,price,timestamp,idstock
 		  FROM price
 		  WHERE idstock=%d AND price=%f AND timestamp=%d
@@ -244,7 +244,7 @@ func (ld *LiteDB) FetchPrice(idstock int64, price float64, timestamp int64) ([]*
 	return ld.selectQueryPrice(q)
 }
 
-func (ld *LiteDB) FetchPreviosPriceInStock(idstock int64, timestampLatest int64) ([]*Price, error) {
+func (ld *LiteDB) SelectPreviousPriceInStock(idstock int64, timestampLatest int64) ([]*Price, error) {
 	q := `SELECT id,price,timestamp,idstock
 		  FROM price
 		  WHERE idstock=%d AND timestamp<%d

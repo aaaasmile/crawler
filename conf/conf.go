@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"log"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -18,10 +17,10 @@ var Current = &Config{}
 func ReadConfig(configfile string) (*Config, error) {
 	_, err := os.Stat(configfile)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	if _, err := toml.DecodeFile(configfile, &Current); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	return Current, nil
 }

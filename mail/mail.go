@@ -64,7 +64,7 @@ func (ms *MailSender) SendEmailViaRelay(templFileName string, listsrc []*idl.Cha
 		return err
 	}
 	if ms.simulate {
-		log.Println("This is a simulation, e-mail si not sent")
+		log.Println("This is a simulation, e-mail is not sent")
 		return nil
 	}
 

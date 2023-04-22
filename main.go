@@ -12,9 +12,9 @@ import (
 
 func main() {
 	var ver = flag.Bool("ver", false, "Prints the current version")
-	var simulate = flag.Bool("simulate", false, "Simulate email send")
+	var simulate = flag.Bool("simulate", false, "Simulate email send (build the message without sending it)")
 	var configfile = flag.String("config", "config.toml", "Configuration file path")
-	var resendmail = flag.Bool("resendmail", false, "Resend email with the last downloaded data")
+	var resendmail = flag.Bool("resendmail", false, "Resend email using the last data download")
 
 	flag.Parse()
 
@@ -32,5 +32,4 @@ func main() {
 		panic(err)
 	}
 	log.Println("That's all folks.")
-	os.Exit(0)
 }
