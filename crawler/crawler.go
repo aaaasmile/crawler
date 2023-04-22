@@ -301,8 +301,29 @@ func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoCh
 			//fmt.Println("***  ", psfinlbl, psfinval)
 			item.PriceFinal = psfinval
 			item.ClosedAt = psfinlbl
-			sent = true
-			chItem <- &item
+			//sent = true
+			//chItem <- &item
+		} else if strings.HasPrefix(hh, "Aktuelle Entwicklung") {
+			fmt.Println("*** H ", hh)
+			//svg := e.DOM.ChildrenFiltered("svg")
+			// svghtml, err := e.DOM.ChildrenMatcher("div > div").Html()
+			// if err != nil {
+			// 	log.Println("SVG html error", err)
+			// 	item.Error = err
+			// 	sent = true
+			// 	chItem <- &item
+			// }
+			e.ForEach("div.card-body > div", func(_ int, el *colly.HTMLElement) {
+				//svghtml, _ := el.DOM.ChildrenFiltered(".chart-container").Html()
+				//svghtml := el.DOM.ChildrenFiltered(".chart-container")
+				svghtml, _ := el.DOM.Html()
+				fmt.Println("*** SVG ", svghtml)
+			})
+			// svg := e.DOM.ChildrenFiltered("div.card-body ")
+			// svghtml, _ := svg.Html()
+			// fmt.Println("*** SVG ", svghtml)
+
+			//fileNameDst := fmt.Sprintf("data/chart_%d.svg", id)
 		}
 	})
 	// On every a element which has href attribute call callback
