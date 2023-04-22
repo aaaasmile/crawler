@@ -67,10 +67,9 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 	if err := cc.insertPriceList(); err != nil {
 		return err
 	}
-	// TEST the fetch first and then enable the e-mail
-	// if err := cc.sendChartEmail(); err != nil {
-	// 	return err
-	// }
+	if err := cc.sendChartEmail(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -86,12 +85,12 @@ func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 	log.Println("Found stocks ", len(stockList))
 	for _, v := range stockList {
 		chartItem := idl.ChartInfo{}
-		fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
+		//fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
 		chartItem.Description = v.Description
 		chartItem.MoreInfoURL = v.MoreInfoURL
 		chartItem.SimpleDescr = v.SimpleDescr
 		chartItem.ChartURL = v.ChartURL
-		chartItem.DownloadFilename = fileNameDst
+		//chartItem.DownloadFilename = fileNameDst
 
 		cc.list = append(cc.list, &chartItem)
 	}
@@ -301,30 +300,32 @@ func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoCh
 			//fmt.Println("***  ", psfinlbl, psfinval)
 			item.PriceFinal = psfinval
 			item.ClosedAt = psfinlbl
-			//sent = true
-			//chItem <- &item
-		} else if strings.HasPrefix(hh, "Aktuelle Entwicklung") {
-			fmt.Println("*** H ", hh)
-			//svg := e.DOM.ChildrenFiltered("svg")
-			// svghtml, err := e.DOM.ChildrenMatcher("div > div").Html()
-			// if err != nil {
-			// 	log.Println("SVG html error", err)
-			// 	item.Error = err
-			// 	sent = true
-			// 	chItem <- &item
-			// }
-			e.ForEach("div.card-body > div", func(_ int, el *colly.HTMLElement) {
-				//svghtml, _ := el.DOM.ChildrenFiltered(".chart-container").Html()
-				//svghtml := el.DOM.ChildrenFiltered(".chart-container")
-				svghtml, _ := el.DOM.Html()
-				fmt.Println("*** SVG ", svghtml)
-			})
-			// svg := e.DOM.ChildrenFiltered("div.card-body ")
-			// svghtml, _ := svg.Html()
-			// fmt.Println("*** SVG ", svghtml)
-
-			//fileNameDst := fmt.Sprintf("data/chart_%d.svg", id)
+			sent = true
+			chItem <- &item
 		}
+		//} else if strings.HasPrefix(hh, "Aktuelle Entwicklung") {
+		// Sezione di prove che non funzionano
+		//fmt.Println("*** H ", hh)
+		//svg := e.DOM.ChildrenFiltered("svg")
+		// svghtml, err := e.DOM.ChildrenMatcher("div > div").Html()
+		// if err != nil {
+		// 	log.Println("SVG html error", err)
+		// 	item.Error = err
+		// 	sent = true
+		// 	chItem <- &item
+		// }
+		// e.ForEach("div.card-body > div", func(_ int, el *colly.HTMLElement) {
+		// 	//svghtml, _ := el.DOM.ChildrenFiltered(".chart-container").Html()
+		// 	//svghtml := el.DOM.ChildrenFiltered(".chart-container")
+		// 	svghtml, _ := el.DOM.Html()
+		// 	fmt.Println("*** SVG ", svghtml)
+		// })
+		// svg := e.DOM.ChildrenFiltered("div.card-body ")
+		// svghtml, _ := svg.Html()
+		// fmt.Println("*** SVG ", svghtml)
+
+		//fileNameDst := fmt.Sprintf("data/chart_%d.svg", id)
+		//}
 	})
 	// On every a element which has href attribute call callback
 	// c.OnHTML("img[src]", func(e *colly.HTMLElement) {

@@ -10,6 +10,14 @@ Per avere cgo bisogna settare il path:
 
     $env:path="C:\TDM-GCC-64\bin;" + $env:path
 
+## Nuovo sito
+Il service del chart è stato aggiornato in 04.23. Non ci sono più chart
+in formato gif ma svg su un sito tutto nuovo. Per salvare le figure 
+in formato svg vedi la sotto directory sometest. Il crawler  github.com/gocolly/colly
+non sembra in grado di scaricare html che si aggiorna in background. Per questo
+ho cominciato a scaricare i chart usando github.com/chromedp (vedi somtest dir).
+
+
 ## Deployment
 Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
 Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
