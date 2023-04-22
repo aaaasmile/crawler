@@ -137,7 +137,7 @@ loop:
 			chartItem := idl.ChartInfo{ColorWL: "green"}
 			chartItem.HasError = res.Error != nil
 			if res.Error != nil {
-				log.Println("chartItem has an error", err)
+				log.Println("chartItem has an error:", res.Error)
 				chartItem.HasError = true
 				chartItem.ErrorText = res.Error.Error()
 			} else {
@@ -280,35 +280,75 @@ func (cc *CrawlerOfChart) sendMailViaRelay(mm *mail.MailSender) error {
 	return nil
 }
 
+type PickState int
+
+const (
+	PSLookForSectionCard PickState = iota
+	PSLookForBasis
+	PSLookForFinal
+	PSLookDone
+)
+
 func pickPicture(URL string, id int64, serverURI string, chItem chan *InfoChart) {
 	log.Println("Fetching chart for ", id, URL)
 	c := colly.NewCollector()
 	found := false
-	// On every a element which has href attribute call callback
-	c.OnHTML("img[src]", func(e *colly.HTMLElement) {
-		link := e.Attr("src")
-		alt := e.Attr("alt")
-		if strings.HasPrefix(link, "getChart") {
-			fileNameDst := fmt.Sprintf("data/chart_%d.png", id)
-			log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
-			item := InfoChart{
-				Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
-				Link:    link,
-				Text:    e.Text,
-				FileDst: fileNameDst,
-				ID:      id,
+	state := PSLookForFinal
+	// https://github.com/PuerkitoBio/goquery
+	// https://github.com/gocolly/colly/blob/master/_examples
+	// c.OnHTML("section.card", func(e *colly.HTMLElement) {
+	// 	fmt.Println("*** section card")
+	// 	state = PSLookForBasis
+	// })
+	// c.OnHTML("h2.card-title", func(e *colly.HTMLElement) {
+	// 	if state == PSLookForBasis {
+	// 		fmt.Println("*** h2", e.Text)
+	// 		if strings.HasPrefix(e.Text, "Basisinformationen") {
+	// 			log.Println("We are on price info section, search for Schluss")
+	// 			state = PSLookForFinal
+	// 		}
+	// 	} else if state == PSLookForFinal {
+	// 		fmt.Println("*** h2", e.Text)
+	// 		log.Println("Done with base information")
+	// 		state = PSLookDone
+	// 	}
+	// })
+	c.OnHTML("section.card", func(e *colly.HTMLElement) {
+		if state == PSLookForFinal {
+			hh := e.ChildText("header > h2")
+			if strings.HasPrefix(hh, "Basisinformationen") {
+				fmt.Println("*** H ", hh)
+				psfinlbl := e.ChildText("table > tbody > tr:nth-child(2) > td:nth-child(1)")
+				psfinval := e.ChildText("table > tbody > tr:nth-child(2) > td:nth-child(2)")
+				fmt.Println("***  ", psfinlbl, psfinval)
 			}
-			err := downloadFile(serverURI+item.Link, item.FileDst)
-			if err != nil {
-				log.Println("Downloading image error", err)
-				item.Error = err
-			}
-			found = true
-			chItem <- &item
 		}
-		//fmt.Println("*** link image", link, alt)
-		//something like: *** link image getChart.asp?action=getChart&chartID=71C233968F97F40CD296DA8A36E792DF6A50394A IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
 	})
+	// On every a element which has href attribute call callback
+	// c.OnHTML("img[src]", func(e *colly.HTMLElement) {
+	// 	link := e.Attr("src")
+	// 	alt := e.Attr("alt")
+	// 	if strings.HasPrefix(link, "getChart") {
+	// 		fileNameDst := fmt.Sprintf("data/chart_%d.png", id)
+	// 		log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
+	// 		item := InfoChart{
+	// 			Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
+	// 			Link:    link,
+	// 			Text:    e.Text,
+	// 			FileDst: fileNameDst,
+	// 			ID:      id,
+	// 		}
+	// 		err := downloadFile(serverURI+item.Link, item.FileDst)
+	// 		if err != nil {
+	// 			log.Println("Downloading image error", err)
+	// 			item.Error = err
+	// 		}
+	// 		found = true
+	// 		chItem <- &item
+	// 	}
+	// 	//fmt.Println("*** link image", link, alt)
+	// 	//something like: *** link image getChart.asp?action=getChart&chartID=71C233968F97F40CD296DA8A36E792DF6A50394A IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
+	// })
 
 	c.OnRequest(func(r *colly.Request) {
 		log.Println("Visiting", r.URL.String())
@@ -328,7 +368,7 @@ func pickPicture(URL string, id int64, serverURI string, chItem chan *InfoChart)
 
 	log.Println("Terminate request")
 	if !found {
-		log.Println("Chart image not recognized")
+		log.Println("Chart not found")
 		item := InfoChart{
 			Error: fmt.Errorf("Chart not recognized on %s", URL),
 			ID:    id,
