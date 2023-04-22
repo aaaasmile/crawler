@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -21,18 +23,33 @@ func main() {
 	defer cancel()
 
 	// navigate to a page, wait for an element, click
+	sel6month := `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label.btn.btn-link.active`
 	var example string
 	err := chromedp.Run(ctx,
-		chromedp.Navigate(`https://pkg.go.dev/time`),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Navigate to chart")
+			return nil
+		}),
+		chromedp.Navigate(`https://www.easybank.at/markets/etf/tts-23293522/IS-EO-ST-SEL-DIV-30-U-E-D`),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Wait visible")
+			return nil
+		}),
 		// wait for footer element is visible (ie, page is loaded)
 		chromedp.WaitVisible(`body > footer`),
-		// find and click "Example" link
-		chromedp.Click(`#example-After`, chromedp.NodeVisible),
-		// retrieve the text of the textarea
-		chromedp.Value(`#example-After textarea`, &example),
+		// click on chart 6 MOnate Use Browser Copy Selector for this link
+		chromedp.Click(sel6month, chromedp.NodeVisible),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Click done")
+			return nil
+		}),
+		//chromedp.Value(`#highcharts-ymhu649-482 > svg`, &example),
+		chromedp.InnerHTML(`body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`, &example, chromedp.NodeVisible),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Go's time.After example:\n%s", example)
+
+	log.Printf("SVG after get:\n%s", example)
+	ioutil.WriteFile("chart.svg", []byte(example), 0)
 }
