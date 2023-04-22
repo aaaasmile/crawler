@@ -20,16 +20,14 @@ import (
 
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
-	"google.golang.org/api/gmail/v1"
 )
 
 type MailSender struct {
-	liteDB       *db.LiteDB
-	gmailService *gmail.Service
-	secret       *db.Secret
-	simulate     bool
-	emailTo      string
-	emailFrom    string
+	liteDB    *db.LiteDB
+	secret    *db.Secret
+	simulate  bool
+	emailTo   string
+	emailFrom string
 }
 
 func NewMailSender(ld *db.LiteDB, simulate bool) *MailSender {
@@ -47,7 +45,7 @@ func (ms *MailSender) FetchSecretFromDb() error {
 	}
 	log.Println("Secrets: ", secr)
 	if len(secr) != 1 {
-		return fmt.Errorf("Secret is not inserted or is multiple. Please check the db")
+		return fmt.Errorf("secret is not inserted or is multiple. Please check the db")
 	}
 
 	ms.secret = &secr[0]
@@ -134,18 +132,26 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	listErr := make([]*idl.ChartInfo, 0)
 	imgBuf := &bytes.Buffer{}
 	for _, v := range listsrc {
-		if v.DownloadFilename == "" || v.HasError || v.ErrorText != "" {
+		if v.HasError || v.ErrorText != "" {
 			log.Println("Wrong img: ", v)
 			listErr = append(listErr, v)
 			continue
 		}
-		fname, err := embedImgFile(v.DownloadFilename, imgBuf, bound1)
-		if err != nil {
-			log.Println("Ignore image ", v, err)
-			v.ErrorText = err.Error()
-			listErr = append(listErr, v)
+		insert := false
+		if v.DownloadFilename != "" {
+			fname, err := embedImgFile(v.DownloadFilename, imgBuf, bound1)
+			if err != nil {
+				log.Println("Ignore image ", v, err)
+				v.ErrorText = err.Error()
+				listErr = append(listErr, v)
+			} else {
+				v.ImgName = fname
+				insert = true
+			}
 		} else {
-			v.ImgName = fname
+			insert = true
+		}
+		if insert {
 			if v.Quantity == "" || v.Quantity == "0.0" || v.Quantity == "0" || v.Quantity == "0.00" {
 				listObservation = append(listObservation, v)
 			} else {

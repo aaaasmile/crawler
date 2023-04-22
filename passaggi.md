@@ -34,9 +34,9 @@ git pull
 go build -o crawler.bin
 
 Per avere il db in locale dal target:
-rsync -chavzP --stats igors@pi3:/home/igors/projects/go/crawler/chart-info.db . 
+rsync -chavzP --stats igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db . 
 Per rimetterlo indietro:
-rsync -chavzP --stats ./chart-info.db igors@pi3:/home/igors/projects/go/crawler/chart-info.db
+rsync -chavzP --stats ./chart-info.db igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db
 
 Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
 
