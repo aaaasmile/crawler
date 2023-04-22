@@ -115,7 +115,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	mapStock := make(map[int64]*db.StockInfo)
 	for _, v := range stockList {
 		if mapStock[v.ID] != nil {
-			return fmt.Errorf("Duplicate key %d", v.ID)
+			return fmt.Errorf("duplicate key %d", v.ID)
 		}
 		mapStock[v.ID] = v
 	}
@@ -241,7 +241,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 				v.DiffPreviousPrice = (v.PriceInfo.Price - prev.Price) / prev.Price * 100.0
 			}
 		} else if len(pps) > 1 {
-			return fmt.Errorf("Some strange previous %d %v %d", len(pps), pps, v.ID)
+			return fmt.Errorf("some strange previous %d %v %d", len(pps), pps, v.ID)
 		}
 	}
 	if count > 0 {
@@ -348,7 +348,7 @@ func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoCh
 	log.Println("Terminate request")
 	if !sent {
 		log.Println("Chart not found")
-		item.Error = fmt.Errorf("Chart not recognized (service html layout changed?) on %s", URL)
+		item.Error = fmt.Errorf("chart not recognized (service html layout changed?) on %s", URL)
 		chItem <- &item
 	}
 }
@@ -363,7 +363,7 @@ func downloadFile(URL, fileName string) error {
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		return errors.New("Received non 200 response code")
+		return errors.New("received non 200 response code")
 	}
 	//Create a empty file
 	file, err := os.Create(fileName)
@@ -386,7 +386,7 @@ func parseForPriceInfo(pricestr string, closed string) (*db.Price, error) {
 	// closed is like: Schluss 15.01.23
 	arr := strings.Split(closed, " ")
 	if len(arr) < 2 {
-		return nil, fmt.Errorf("Expect at least one space")
+		return nil, fmt.Errorf("expect at least one space")
 	}
 
 	pricestr = strings.Replace(pricestr, ",", ".", 1)
@@ -398,13 +398,15 @@ func parseForPriceInfo(pricestr string, closed string) (*db.Price, error) {
 	datestr := arr[1]
 	pparr := strings.Split(datestr, ".")
 	if len(pparr) != 3 {
-		return nil, fmt.Errorf("Expected 3 date field separated with dot")
+		return nil, fmt.Errorf("expected 3 date field separated with dot")
 	}
 	dd := strings.Trim(pparr[0], " ")
 	mm := strings.Trim(pparr[1], " ")
 	yy := strings.Trim(pparr[2], " ")
 	if yy == "" {
 		yy = fmt.Sprintf("%d", time.Now().Year())
+	} else if len(yy) == 2 {
+		yy = fmt.Sprintf("20%s", yy)
 	}
 
 	hh := "17" // use a fixed closed time because it is not provided anymore
