@@ -6,6 +6,10 @@ I chart vengono scaricati e inviati con una mail usando relay di invido.it.
 
 Le credential sono nel db
 
+Per avere cgo bisogna settare il path:
+
+    $env:path="C:\TDM-GCC-64\bin;" + $env:path
+
 ## Deployment
 Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
 Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)

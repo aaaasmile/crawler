@@ -21,13 +21,11 @@ import (
 )
 
 type CrawlerOfChart struct {
-	liteDB            *db.LiteDB
-	list              []*idl.ChartInfo
-	serverURI         string
-	Simulate          bool
-	ResendEmail       bool
-	UseDBToken        bool
-	UseServiceAccount bool
+	liteDB      *db.LiteDB
+	list        []*idl.ChartInfo
+	serverURI   string
+	Simulate    bool
+	ResendEmail bool
 }
 
 type InfoChart struct {
@@ -261,13 +259,10 @@ func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
 
-	mm := mail.NewMailSender(cc.liteDB, conf.Current.ServiceAccount, cc.Simulate)
+	mm := mail.NewMailSender(cc.liteDB, cc.Simulate)
 
 	if err := mm.FetchSecretFromDb(); err != nil {
 		return err
-	}
-	if cc.UseDBToken || cc.UseServiceAccount {
-		return cc.sendMailViaGoogle(mm)
 	}
 	return cc.sendMailViaRelay(mm)
 
@@ -277,25 +272,6 @@ func (cc *CrawlerOfChart) sendMailViaRelay(mm *mail.MailSender) error {
 
 	templFileName := "templates/chart-mail.html"
 	if err := mm.SendEmailViaRelay(templFileName, cc.list); err != nil {
-		return err
-	}
-
-	return nil
-}
-func (cc *CrawlerOfChart) sendMailViaGoogle(mm *mail.MailSender) error {
-	log.Println("Using google services to send the mail")
-	if cc.UseDBToken {
-		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
-			return err
-		}
-	} else {
-		if err := mm.AuthGmailServiceWithJWT(); err != nil {
-			return err
-		}
-	}
-
-	templFileName := "templates/chart-mail.html"
-	if err := mm.SendEmailViaOAUTH2(templFileName, cc.list); err != nil {
 		return err
 	}
 

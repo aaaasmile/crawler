@@ -15,8 +15,6 @@ func main() {
 	var simulate = flag.Bool("simulate", false, "Simulate email send")
 	var configfile = flag.String("config", "config.toml", "Configuration file path")
 	var resendmail = flag.Bool("resendmail", false, "Resend email with the last downloaded data")
-	var usedbtoken = flag.Bool("dbtoken", false, "Use the refresh and auth token stored into the db (gmail)")
-	var useserviceaccount = flag.Bool("useserviceaccount", false, "Use service account credential (gsuite)")
 
 	flag.Parse()
 
@@ -26,10 +24,8 @@ func main() {
 	}
 
 	crw := crawler.CrawlerOfChart{
-		Simulate:          *simulate,
-		ResendEmail:       *resendmail,
-		UseDBToken:        *usedbtoken,
-		UseServiceAccount: *useserviceaccount,
+		Simulate:    *simulate,
+		ResendEmail: *resendmail,
 	}
 
 	if err := crw.Start(*configfile); err != nil {

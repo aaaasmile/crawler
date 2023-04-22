@@ -2,11 +2,9 @@ package mail
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -15,40 +13,29 @@ import (
 	mathrand "math/rand"
 	"mime"
 	"net"
-	"net/http"
 	"net/smtp"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/aaaasmile/crawler/conf"
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
-	"github.com/dgrijalva/jwt-go"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
-	"google.golang.org/api/option"
 )
 
 type MailSender struct {
-	liteDB         *db.LiteDB
-	gmailService   *gmail.Service
-	secret         *db.Secret
-	serviceAccount *conf.ServiceAccount
-	simulate       bool
-	emailTo        string
-	emailFrom      string
+	liteDB       *db.LiteDB
+	gmailService *gmail.Service
+	secret       *db.Secret
+	simulate     bool
+	emailTo      string
+	emailFrom    string
 }
 
-func NewMailSender(ld *db.LiteDB, sa *conf.ServiceAccount, simulate bool) *MailSender {
+func NewMailSender(ld *db.LiteDB, simulate bool) *MailSender {
 	ms := MailSender{
-		liteDB:         ld,
-		simulate:       simulate,
-		serviceAccount: sa,
+		liteDB:   ld,
+		simulate: simulate,
 	}
 	return &ms
 }
@@ -64,165 +51,6 @@ func (ms *MailSender) FetchSecretFromDb() error {
 	}
 
 	ms.secret = &secr[0]
-	return nil
-}
-
-func (ms *MailSender) AuthGmailServiceWithJWT() error {
-	log.Println("Request access token via JWT")
-	tk, err := ms.getJWTToken()
-	if err != nil {
-		return err
-	}
-
-	// Try to do this request
-	// POST /token HTTP/1.1
-	// Host: oauth2.googleapis.com
-	// Content-Type: application/x-www-form-urlencoded
-	// grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiIsInR
-
-	client := &http.Client{}
-	data := url.Values{}
-	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-	data.Set("assertion", tk)
-
-	req, err := http.NewRequest("POST", ms.serviceAccount.TokenURI, strings.NewReader(data.Encode()))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", `application/x-www-form-urlencoded`)
-	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	rawbody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	accessTokenDef := struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		TokenType   string `json:"token_type"`
-	}{}
-
-	if err := json.Unmarshal(rawbody, &accessTokenDef); err != nil {
-		return err
-	}
-	log.Println("Received auth token from jwt ", accessTokenDef)
-
-	config := oauth2.Config{
-		ClientID:     ms.secret.ClientID,
-		ClientSecret: ms.secret.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost",
-	}
-
-	exp := time.Now()
-	exp = exp.Add(time.Second * time.Duration(accessTokenDef.ExpiresIn))
-	token := oauth2.Token{
-		AccessToken: accessTokenDef.AccessToken,
-		TokenType:   "Bearer",
-		Expiry:      exp,
-	}
-
-	var tokenSource = config.TokenSource(context.Background(), &token)
-
-	srv, err := gmail.NewService(context.Background(), option.WithTokenSource(tokenSource))
-	if err != nil {
-		log.Printf("Unable to retrieve Gmail client: %v", err)
-		return err
-	}
-
-	ms.gmailService = srv
-	log.Println("Email service is initialized")
-
-	ms.emailTo = ms.secret.Email
-	ms.emailFrom = ""
-	return nil
-}
-
-func (ms *MailSender) AuthGmailServiceWithDBSecret() error {
-	log.Println("Using token stored into the db (aka manually created and copied there)")
-	accessToken := ms.secret.AccessToken
-	if accessToken == "" {
-		accessToken = ms.secret.AuthToken
-	}
-
-	ms.emailTo = ms.secret.Email
-	ms.emailFrom = "" // gmail will set it
-
-	return ms.oAuthGmailService(accessToken, ms.secret.RefreshToken)
-}
-
-func (ms *MailSender) oAuthGmailService(accessToken, refreshToken string) error {
-	log.Println("Authorize with oauth")
-	config := oauth2.Config{
-		ClientID:     ms.secret.ClientID,
-		ClientSecret: ms.secret.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost",
-	}
-
-	log.Println("Using access token: ", accessToken)
-
-	token := oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "Bearer",
-		Expiry:       time.Now(),
-	}
-
-	var tokenSource = config.TokenSource(context.Background(), &token)
-	var tokenUpdated *oauth2.Token
-	tokenUpdated, err := tokenSource.Token()
-	if err != nil {
-		return err
-	}
-	if ms.secret.AccessToken != tokenUpdated.AccessToken {
-		log.Println("Access token updated")
-		log.Println("Update secret in db")
-		if _, err := ms.liteDB.UpdateSecret(ms.secret.ID, tokenUpdated.AccessToken, tokenUpdated.RefreshToken); err != nil {
-			return err
-		}
-	}
-
-	srv, err := gmail.NewService(context.Background(), option.WithTokenSource(tokenSource))
-	if err != nil {
-		log.Printf("Unable to retrieve Gmail client: %v", err)
-		return err
-	}
-
-	ms.gmailService = srv
-	log.Println("Email service is initialized")
-	return nil
-}
-
-func (ms *MailSender) SendEmailViaOAUTH2(templFileName string, listsrc []*idl.ChartInfo) error {
-	log.Println("Send e-mail with gmail service using multipart. Charts: ", len(listsrc))
-	if ms.gmailService == nil {
-		return fmt.Errorf("Gmail service was not authorized and created")
-	}
-
-	msg, err := ms.buildEmailMsg(templFileName, listsrc)
-	if err != nil {
-		return err
-	}
-
-	var message gmail.Message
-	message.Raw = base64.URLEncoding.EncodeToString(msg.Bytes())
-
-	if !ms.simulate {
-		if _, err := ms.gmailService.Users.Messages.Send("me", &message).Do(); err != nil {
-			return err
-		}
-
-		log.Println("E-Mail is on the way. Everything is going well.")
-	} else {
-		log.Printf("Simulate Mail sent")
-	}
 	return nil
 }
 
@@ -487,42 +315,4 @@ func randomIdAscii(size int) string {
 		buf = append(buf, byte(set[ixrnd]))
 	}
 	return string(buf)
-}
-
-func (ms *MailSender) getJWTToken() (string, error) {
-	log.Println("Create JWT Using key id: ", ms.serviceAccount.PrivateKeyID)
-	keyB := []byte(ms.serviceAccount.PrivateKey)
-
-	mySigningKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyB)
-	if err != nil {
-		return "", err
-	}
-	//fmt.Printf("** Signing key %q \n", mySigningKey)
-
-	iat := time.Now()
-	strForSec := "3000s"
-	log.Printf("JWT will Expire in %s seconds\n", strForSec)
-	duration, _ := time.ParseDuration(strForSec)
-	exp := iat.Add(duration)
-	var claims jwt.MapClaims
-	claims = jwt.MapClaims{
-		"iss":   ms.serviceAccount.ClientMail,
-		"sub":   ms.serviceAccount.ClientMail,
-		"scope": "https://www.googleapis.com/auth/gmail.send",
-		"aud":   ms.serviceAccount.TokenURI,
-		"exp":   exp.Unix(),
-		"iat":   iat.Unix(),
-	}
-	log.Println("Using claim", claims)
-
-	// "iss": "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer.gserviceaccount.com",
-	// "sub": "some.user@example.com",
-	// "scope": "https://www.googleapis.com/auth/prediction",
-	// "aud": "https://oauth2.googleapis.com/token",
-	// "exp": 1328554385,
-	// "iat": 1328550785
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	tk, err := token.SignedString(mySigningKey)
-	return tk, err
 }
