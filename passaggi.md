@@ -10,6 +10,10 @@ Per avere cgo bisogna settare il path:
 
     $env:path="C:\TDM-GCC-64\bin;" + $env:path
 
+Sul mio mini-k7 per effettuare un build devo usare:
+
+	go build -buildvcs=false
+	
 ## Nuovo sito
 Il service del chart è stato aggiornato in 04.23. Non ci sono più chart
 in formato gif ma svg su un sito tutto nuovo. Per salvare le figure 
@@ -26,7 +30,9 @@ Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
 Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
 28 18 * * 5  cd /home/igors/projects/go/crawler && ./crawler.bin > /tmp/crawler.log
 Per fare andare crontab -e bisogna lanciare sudo raspi-config e settare la time zone.
-Dopo un reboot crontab -e funziona.
+Dopo un reboot crontab -e funziona. Ad un certo però, su pi3-hole crontab non ha più funzionato.
+Vedi il file di readme-pihole di per come ho risolto, ma ho dovuto un'alternativa a crontab.
+Per questo ho usato Anacron.
 
 ## Aggiornare il programma
 Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
