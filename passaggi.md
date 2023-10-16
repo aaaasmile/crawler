@@ -14,7 +14,7 @@ Sul mio mini-k7 per effettuare un build devo usare:
 
 	go build -buildvcs=false
 	
-## Nuovo sito
+## Nuovo sito aprile 2023
 Il service del chart è stato aggiornato in 04.23. Non ci sono più chart
 in formato gif ma svg su un sito tutto nuovo. Per salvare le figure 
 in formato svg vedi la sotto directory sometest. Il crawler  github.com/gocolly/colly
@@ -51,7 +51,7 @@ rsync -chavzP --stats ./chart-info.db igors@pi3.local:/home/igors/projects/go/cr
 Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
 
 ## Email Relay su invido.it
-Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non è possibile, vedi sotto).
+Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non ci sono riuscito, vedi passaggi_gmail.md).
 Per vedere come si manda la mail vedi  
 D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
 

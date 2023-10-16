@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -37,7 +37,7 @@ func main() {
 		}),
 		// wait for footer element is visible (ie, page is loaded)
 		chromedp.WaitVisible(`body > footer`),
-		// click on chart 6 MOnate Use Browser Copy Selector for this link
+		// click on chart 6 Monate Use Browser Copy Selector for this link
 		chromedp.Click(sel6month, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Click done")
@@ -51,5 +51,5 @@ func main() {
 	}
 
 	log.Printf("SVG after get:\n%s", example)
-	ioutil.WriteFile("chart.svg", []byte(example), 0)
+	os.WriteFile("chart.svg", []byte(example), 0)
 }

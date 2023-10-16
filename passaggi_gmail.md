@@ -2,7 +2,8 @@
 
 In questo file ho messo delle informazioni utili per mandare la mail
 usando il servizio gmail di google. Alla fine però ho abbandonato l'idea in quanto si 
-è rivelata impraticabile con l'account free.
+è rivelata impraticabile con l'account free. Perché impraticabile? Perchè l'access token
+è disponibile solo manualmente cliccando il sito di google e la sua validità è di 7 giorni.
 
 ## Mandare le mail con google 
 

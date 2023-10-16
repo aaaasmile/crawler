@@ -1,3 +1,105 @@
-<svg version="1.1" class="highcharts-root" xmlns="http://www.w3.org/2000/svg" width="408" height="200" viewBox="0 0 408 200"><desc>Created with Highcharts 7.0.1</desc><defs><style>.highcharts-3d-top{filter: url(#highcharts-brighter)}
+<svg version="1.1" class="highcharts-root"
+    xmlns="http://www.w3.org/2000/svg" width="408" height="200" viewBox="0 0 408 200">
+    <desc>Created with Highcharts 7.0.1</desc>
+    <defs>
+        <style>.highcharts-3d-top{filter: url(#highcharts-brighter)}
 .highcharts-3d-side{filter: url(#highcharts-darker)}
-</style><filter id="highcharts-darker"><feComponentTransfer><feFuncR type="linear" slope="0.6"></feFuncR><feFuncG type="linear" slope="0.6"></feFuncG><feFuncB type="linear" slope="0.6"></feFuncB></feComponentTransfer></filter><filter id="highcharts-brighter"><feComponentTransfer><feFuncR type="linear" slope="1.4"></feFuncR><feFuncG type="linear" slope="1.4"></feFuncG><feFuncB type="linear" slope="1.4"></feFuncB></feComponentTransfer></filter><clipPath id="highcharts-8moexah-1"><rect x="0" y="0" width="349" height="167"></rect></clipPath><clipPath id="highcharts-8moexah-13"><rect x="-96.99091735677513" y="-5" width="106.08252366146952" height="200"></rect></clipPath><clipPath id="highcharts-8moexah-14"><rect x="0" y="0" width="7.0825236614695175" height="167"></rect></clipPath><clipPath id="highcharts-8moexah-15"><rect x="0" y="24" width="408" height="148"></rect></clipPath><clipPath id="highcharts-8moexah-16"><rect x="0" y="0" width="408" height="24"></rect></clipPath></defs><rect class="highcharts-background" x="0.5" y="0.5" width="406" height="198" rx="0" ry="0"></rect><rect class="highcharts-plot-background" x="1" y="5" width="349" height="167"></rect><g class="highcharts-pane-group" data-z-index="0"></g><g class="highcharts-plot-lines-0" data-z-index="0"><path class="highcharts-plot-line " d="M 1 29 L 350 29"></path></g><g class="highcharts-grid highcharts-xaxis-grid highcharts-nogrid" data-z-index="1"><path data-z-index="1" class="highcharts-grid-line" d="M 23.5 5 L 23.5 172" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 116.5 5 L 116.5 172" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 209.5 5 L 209.5 172" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 302.5 5 L 302.5 172" opacity="1"></path></g><g class="highcharts-grid highcharts-yaxis-grid highcharts-nogrid" data-z-index="1"><path data-z-index="1" class="highcharts-grid-line" d="M 1 164.5 L 350 164.5" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 1 128.5 L 350 128.5" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 1 91.5 L 350 91.5" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 1 55.5 L 350 55.5" opacity="1"></path><path data-z-index="1" class="highcharts-grid-line" d="M 1 19.5 L 350 19.5" opacity="1"></path></g><rect class="highcharts-plot-border" data-z-index="1" x="0.5" y="4.5" width="350" height="168"></rect><g class="highcharts-axis highcharts-xaxis highcharts-nogrid" data-z-index="2"><path class="highcharts-axis-line" d="M 1 172 L 350 172"></path><path class="highcharts-tick" d="M 24 172 L 24 182" opacity="1"></path><path class="highcharts-tick" d="M 117 172 L 117 182" opacity="1"></path><path class="highcharts-tick" d="M 210 172 L 210 182" opacity="1"></path><path class="highcharts-tick" d="M 303 172 L 303 182" opacity="1"></path></g><g class="highcharts-axis highcharts-yaxis highcharts-nogrid" data-z-index="2"><path class="highcharts-axis-line" d="M 350 5 L 350 172"></path></g><g class="highcharts-series-group" data-z-index="3"><g data-z-index="0.1" class="highcharts-series highcharts-series-0 highcharts-area-series highcharts-color-0 highcharts-positive" transform="translate(1,5) scale(1 1)" clip-path="url(#highcharts-8moexah-14)"><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area" data-z-index="0" visibility="hidden"></path><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area highcharts-zone-area-0 highcharts-negative" data-z-index="0" clip-path="url(#highcharts-8moexah-15)"></path><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area highcharts-zone-area-1 undefined" data-z-index="0" clip-path="url(#highcharts-8moexah-16)"></path><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph" data-z-index="1" visibility="hidden"></path><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph highcharts-zone-graph-0 highcharts-negative" data-z-index="1" clip-path="url(#highcharts-8moexah-15)"></path><path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph highcharts-zone-graph-1 " data-z-index="1" clip-path="url(#highcharts-8moexah-16)"></path><path d="M -10 143.14285714285714 L 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 359 102.41114982578321" visibility="visible" data-z-index="2" class="highcharts-tracker-line"></path></g><g data-z-index="0.1" class="highcharts-markers highcharts-series-0 highcharts-area-series highcharts-color-0 highcharts-positive highcharts-tracker" transform="translate(1,5) scale(1 1)" clip-path="url(#highcharts-8moexah-13)"></g></g><text x="204" text-anchor="middle" class="highcharts-title" data-z-index="4" y="27"></text><text x="204" text-anchor="middle" class="highcharts-subtitle" data-z-index="4" y="26"></text><g class="highcharts-axis-labels highcharts-xaxis-labels highcharts-nogrid" data-z-index="7"><text x="24.266666666667" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">08:00</text><text x="117.33333333333" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">12:00</text><text x="210.4" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">16:00</text><text x="303.46666666667" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">20:00</text></g><g class="highcharts-axis-labels highcharts-yaxis-labels highcharts-nogrid" data-z-index="7"><text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="169" opacity="1"><tspan>15,35</tspan></text><text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="132" opacity="1"><tspan>15,40</tspan></text><text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="96" opacity="1"><tspan>15,45</tspan></text><text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="60" opacity="1"><tspan>15,50</tspan></text><text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="23" opacity="1"><tspan>15,55</tspan></text></g></svg>
+        </style>
+        <filter id="highcharts-darker">
+            <feComponentTransfer>
+                <feFuncR type="linear" slope="0.6"></feFuncR>
+                <feFuncG type="linear" slope="0.6"></feFuncG>
+                <feFuncB type="linear" slope="0.6"></feFuncB>
+            </feComponentTransfer>
+        </filter>
+        <filter id="highcharts-brighter">
+            <feComponentTransfer>
+                <feFuncR type="linear" slope="1.4"></feFuncR>
+                <feFuncG type="linear" slope="1.4"></feFuncG>
+                <feFuncB type="linear" slope="1.4"></feFuncB>
+            </feComponentTransfer>
+        </filter>
+        <clipPath id="highcharts-8moexah-1">
+            <rect x="0" y="0" width="349" height="167"></rect>
+        </clipPath>
+        <clipPath id="highcharts-8moexah-13">
+            <rect x="-96.99091735677513" y="-5" width="106.08252366146952" height="200"></rect>
+        </clipPath>
+        <clipPath id="highcharts-8moexah-14">
+            <rect x="0" y="0" width="7.0825236614695175" height="167"></rect>
+        </clipPath>
+        <clipPath id="highcharts-8moexah-15">
+            <rect x="0" y="24" width="408" height="148"></rect>
+        </clipPath>
+        <clipPath id="highcharts-8moexah-16">
+            <rect x="0" y="0" width="408" height="24"></rect>
+        </clipPath>
+    </defs>
+    <rect class="highcharts-background" x="0.5" y="0.5" width="406" height="198" rx="0" ry="0"></rect>
+    <rect class="highcharts-plot-background" x="1" y="5" width="349" height="167"></rect>
+    <g class="highcharts-pane-group" data-z-index="0"></g>
+    <g class="highcharts-plot-lines-0" data-z-index="0">
+        <path class="highcharts-plot-line " d="M 1 29 L 350 29"></path>
+    </g>
+    <g class="highcharts-grid highcharts-xaxis-grid highcharts-nogrid" data-z-index="1">
+        <path data-z-index="1" class="highcharts-grid-line" d="M 23.5 5 L 23.5 172" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 116.5 5 L 116.5 172" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 209.5 5 L 209.5 172" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 302.5 5 L 302.5 172" opacity="1"></path>
+    </g>
+    <g class="highcharts-grid highcharts-yaxis-grid highcharts-nogrid" data-z-index="1">
+        <path data-z-index="1" class="highcharts-grid-line" d="M 1 164.5 L 350 164.5" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 1 128.5 L 350 128.5" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 1 91.5 L 350 91.5" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 1 55.5 L 350 55.5" opacity="1"></path>
+        <path data-z-index="1" class="highcharts-grid-line" d="M 1 19.5 L 350 19.5" opacity="1"></path>
+    </g>
+    <rect class="highcharts-plot-border" data-z-index="1" x="0.5" y="4.5" width="350" height="168"></rect>
+    <g class="highcharts-axis highcharts-xaxis highcharts-nogrid" data-z-index="2">
+        <path class="highcharts-axis-line" d="M 1 172 L 350 172"></path>
+        <path class="highcharts-tick" d="M 24 172 L 24 182" opacity="1"></path>
+        <path class="highcharts-tick" d="M 117 172 L 117 182" opacity="1"></path>
+        <path class="highcharts-tick" d="M 210 172 L 210 182" opacity="1"></path>
+        <path class="highcharts-tick" d="M 303 172 L 303 182" opacity="1"></path>
+    </g>
+    <g class="highcharts-axis highcharts-yaxis highcharts-nogrid" data-z-index="2">
+        <path class="highcharts-axis-line" d="M 350 5 L 350 172"></path>
+    </g>
+    <g class="highcharts-series-group" data-z-index="3">
+        <g data-z-index="0.1" class="highcharts-series highcharts-series-0 highcharts-area-series highcharts-color-0 highcharts-positive" transform="translate(1,5) scale(1 1)" clip-path="url(#highcharts-8moexah-14)">
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area" data-z-index="0" visibility="hidden"></path>
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area highcharts-zone-area-0 highcharts-negative" data-z-index="0" clip-path="url(#highcharts-8moexah-15)"></path>
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 349 23.85714285714286 L 226.85 23.85714285714286 L 199.70555555556 23.85714285714286 L 184.19444444444 23.85714285714286 L 182.25555555556 23.85714285714286 L 176.43888888889 23.85714285714286 L 168.68333333333 23.85714285714286 L 87.25 23.85714285714286 L 46.533333333333 23.85714285714286 L 23.266666666667 23.85714285714286 L 0 23.85714285714286" class="highcharts-area highcharts-zone-area-1 undefined" data-z-index="0" clip-path="url(#highcharts-8moexah-16)"></path>
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph" data-z-index="1" visibility="hidden"></path>
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph highcharts-zone-graph-0 highcharts-negative" data-z-index="1" clip-path="url(#highcharts-8moexah-15)"></path>
+            <path d="M 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321" class="highcharts-graph highcharts-zone-graph-1 " data-z-index="1" clip-path="url(#highcharts-8moexah-16)"></path>
+            <path d="M -10 143.14285714285714 L 0 143.14285714285714 L 23.266666666667 143.14285714285714 L 46.533333333333 44.222996515679824 L 87.25 66.04355400696859 L 168.68333333333 90.77351916376227 L 176.43888888889 95.13763066202029 L 182.25555555556 99.50174216027831 L 184.19444444444 100.95644599303141 L 199.70555555556 111.13937282229924 L 226.85 102.41114982578321 L 349 102.41114982578321 L 359 102.41114982578321" visibility="visible" data-z-index="2" class="highcharts-tracker-line"></path>
+        </g>
+        <g data-z-index="0.1" class="highcharts-markers highcharts-series-0 highcharts-area-series highcharts-color-0 highcharts-positive highcharts-tracker" transform="translate(1,5) scale(1 1)" clip-path="url(#highcharts-8moexah-13)"></g>
+    </g>
+    <text x="204" text-anchor="middle" class="highcharts-title" data-z-index="4" y="27"></text>
+    <text x="204" text-anchor="middle" class="highcharts-subtitle" data-z-index="4" y="26"></text>
+    <g class="highcharts-axis-labels highcharts-xaxis-labels highcharts-nogrid" data-z-index="7">
+        <text x="24.266666666667" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">08:00</text>
+        <text x="117.33333333333" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">12:00</text>
+        <text x="210.4" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">16:00</text>
+        <text x="303.46666666667" text-anchor="middle" transform="translate(0,0)" y="193" opacity="1">20:00</text>
+    </g>
+    <g class="highcharts-axis-labels highcharts-yaxis-labels highcharts-nogrid" data-z-index="7">
+        <text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="169" opacity="1">
+            <tspan>15,35</tspan>
+        </text>
+        <text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="132" opacity="1">
+            <tspan>15,40</tspan>
+        </text>
+        <text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="96" opacity="1">
+            <tspan>15,45</tspan>
+        </text>
+        <text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="60" opacity="1">
+            <tspan>15,50</tspan>
+        </text>
+        <text x="397.7049865722656" text-anchor="end" transform="translate(0,0)" y="23" opacity="1">
+            <tspan>15,55</tspan>
+        </text>
+    </g>
+</svg>
