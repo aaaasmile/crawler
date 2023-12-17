@@ -12,6 +12,7 @@
 <body>
     <p id="title">Here will be changed</p>
     <div id="container"></div>
+    <canvas id="mycanvas" width="400" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
 </body>
 <script>
@@ -64,19 +65,21 @@
 <script>
     function myfun() {
         console.log('Try to make canvas')
-        var el = d3.select("svg");
-        var canvas = document.createElement("canvas");
-        canvas.width = 640;
-        canvas.height = 400;
+        //var el = d3.select("svg");
+        // var canvas = document.createElement("canvas");
+        // canvas.width = 640;
+        // canvas.height = 400;
+        var canvas = document.getElementById("mycanvas")
 
         // https://developer.mozilla.org/en/docs/HTML/Canvas/Drawing_DOM_objects_into_a_canvas
 
-        var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
-            + ' class="' + el.attr('class') + '"'
-            + ' width="' + el.attr('width') + '"'
-            + ' height="' + el.attr('height') + '"'
-            + '>'
-            + d3.select("svg").innerHTML + '</svg>';
+        // var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
+        //     + ' class="' + el.attr('class') + '"'
+        //     + ' width="' + el.attr('width') + '"'
+        //     + ' height="' + el.attr('height') + '"'
+        //     + '>'
+        //     + '{{.SvgData}}';
+        var svgMarkup = '{{.SvgData}}';
         console.log('svg markup is ', svgMarkup);
         var ctx = canvas.getContext("2d");
         var DOMURL = window.URL || window.webkitURL || window;
@@ -85,11 +88,13 @@
         var url = DOMURL.createObjectURL(svgCanv);
         img.onload = function () {
             ctx.drawImage(img, 0, 0);
-            console.log('Image ok')
+            console.log('Image ok');
             DOMURL.revokeObjectURL(url);
+            console.log(canvas.toDataURL());
         };
         img.src = url;
-        console.log(canvas.toDataURL());
+        console.log('Now change also the title...')
+        document.getElementById("title").innerHTML = '{{.SvgData}}';
     }
 </script>
 
