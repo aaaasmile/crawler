@@ -15,7 +15,7 @@
     <button type="button" onclick="myfun()">Try It</button>
 </body>
 <script>
-    function myfun() {
+    function myfun2() {
         console.log('my fun is called')
         d3.select("p").style("color", "green");
         document.getElementById("title").innerHTML = "Title changed by javascript";
@@ -61,44 +61,36 @@
 
 </script>
 
-<script type="module">
-    let styleRules = [];
-    var requiredSheets = []; // list of required CSS files
-    for (let i = 0; i < document.styleSheets.length; i++) {
-        const sheet = document.styleSheets[i];
-        if (sheet.href) {
-            const sheetName = sheet.href.split('/').pop();
-            if (requiredSheets.indexOf(sheetName) != -1) {
-                const rules = Array.from(sheet.cssRules).map(rule => rule.cssText);
-                styleRules = styleRules.concat(rules);
-            }
-        }
+<script>
+    function myfun() {
+        console.log('Try to make canvas')
+        var el = d3.select("svg");
+        var canvas = document.createElement("canvas");
+        canvas.width = 640;
+        canvas.height = 400;
+
+        // https://developer.mozilla.org/en/docs/HTML/Canvas/Drawing_DOM_objects_into_a_canvas
+
+        var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
+            + ' class="' + el.attr('class') + '"'
+            + ' width="' + el.attr('width') + '"'
+            + ' height="' + el.attr('height') + '"'
+            + '>'
+            + d3.select("svg").innerHTML + '</svg>';
+        console.log('svg markup is ', svgMarkup);
+        var ctx = canvas.getContext("2d");
+        var DOMURL = window.URL || window.webkitURL || window;
+        var img = new Image();
+        var svgCanv = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+        var url = DOMURL.createObjectURL(svgCanv);
+        img.onload = function () {
+            ctx.drawImage(img, 0, 0);
+            console.log('Image ok')
+            DOMURL.revokeObjectURL(url);
+        };
+        img.src = url;
+        console.log(canvas.toDataURL());
     }
-    //var styleText = styleRules.join(' ');
-    var styleNode = document.createCDATASection(styleRules);
-
-    var svgcanv = d3.select("svg");
-    var img = new Image();
-    const serializer = new XMLSerializer();
-    svgcanv.insert('defs', ":first-child");
-    let styleEl = d3.select("svg defs")
-        .append('style')
-        .attr('type', 'text/css');
-
-    styleEl.node().appendChild(styleNode);
-
-    var svgStr = serializer.serializeToString(svgcanv.node());
-    img.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgStr)));
-
-    const bbox = svgcanv.getBoundingClientRect();
-
-    let canvas = document.createElement("canvas");
-
-    canvas.width = bbox.width;
-    canvas.height = bbox.height;
-    canvas.getContext("2d").drawImage(img, 0, 0, bbox.width, bbox.width);
-
-    canvas.parentNode.replaceChild(canvas, svgcanv);
 </script>
 
 </html>
