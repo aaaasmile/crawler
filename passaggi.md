@@ -22,11 +22,20 @@ non sembra in grado di scaricare html che si aggiorna in background. Per questo
 ho cominciato a scaricare i chart usando github.com/chromedp (vedi somtest dir).
 Al momento ho eliminato la sezione delle immagini dal template (tag img)
 
-## svg
+## svg (progetto sometest)
 Le nuove immagini sono in formato svg. Però hanno anche il tag class che deve essere
-incluso. Nella directory "sometest", riesco a scaricare il file svg senza problemi, però
-quando lo apro risulta nero. Devo trovare un modo di includere i files css e poi magari convertire
-l'immagine in png.
+incluso. Nella directory "sometest", riesco a scaricare il file svg senza problemi 
+(posizionarsi sul chart 6 mesi, però, non è triviale), però
+quando lo apro risulta nero. 
+Il processo di conversione avviene in due step. Per prima cosa uso uno scrap per eseguire
+il download del file svg, che al momento viene messo in sometest/static/data/
+Poi uso un http server per mostrare il file svg e fare in modo che attraverso il canvas diventi
+un'immagine png. Lo style per il grafico è messo dentro al file main.css che ho trovato quando
+ho salvato la pagina dal browser sul mio hard disk.
+Per capire come funziona la visualizzazione del svg nel canvas sono partito dall'esempio dell'ellisse,
+che dopo diverse prove ha funzionato. Per il file scaricato chart02.svg, la sua visualizzazione 
+in html funziona, ma non quella nel canvas per via, credo, degli styles.
+
 
 ## TODO
  - vedi di mettere l'immagine svg del chart nella mail. Il tag svg ha bisogno dei css.
