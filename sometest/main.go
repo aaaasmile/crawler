@@ -14,11 +14,17 @@ type PageCtx struct {
 	Buildnr string
 }
 
+const (
+	buildnr = "00.00.10.00"
+)
+
 func handleGet(w http.ResponseWriter, req *http.Request) error {
 	var err error
 	u, _ := url.Parse(req.RequestURI)
 	log.Println("GET requested ", u)
-	pagectx := PageCtx{}
+	pagectx := PageCtx{
+		Buildnr: buildnr,
+	}
 
 	templName := "templates/index.html"
 
