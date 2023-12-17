@@ -5,12 +5,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="./static/css/_card.scss?{{.Buildnr}}" rel="stylesheet">
+    <!-- <link href="./static/css/_card.scss?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/_highcharts.scss?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/_palette.scss?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/_reboot.scss?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/_root.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_variables.scss?{{.Buildnr}}" rel="stylesheet">
+    <link href="./static/css/_variables.scss?{{.Buildnr}}" rel="stylesheet"> -->
+    <link href="./static/css/main.css?{{.Buildnr}}" rel="stylesheet">
     <script src="./static/lib/d3.v7.js?{{.Buildnr}}"></script>
     <title>SVG converter</title>
 </head>
@@ -21,6 +22,7 @@
     <canvas id="mycanvas" width="408" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
     <!-- <a href="" id="result"></a> -->
+    <div>{{.SvgData}}</div>
 </body>
 <script>
     function myfun2() {
