@@ -22,6 +22,12 @@ non sembra in grado di scaricare html che si aggiorna in background. Per questo
 ho cominciato a scaricare i chart usando github.com/chromedp (vedi somtest dir).
 Al momento ho eliminato la sezione delle immagini dal template (tag img)
 
+## svg
+Le nuove immagini sono in formato svg. Però hanno anche il tag class che deve essere
+incluso. Nella directory "sometest", riesco a scaricare il file svg senza problemi, però
+quando lo apro risulta nero. Devo trovare un modo di includere i files css e poi magari convertire
+l'immagine in png.
+
 ## TODO
  - vedi di mettere l'immagine svg del chart nella mail. Il tag svg ha bisogno dei css.
 
@@ -31,8 +37,8 @@ Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
 28 18 * * 5  cd /home/igors/projects/go/crawler && ./crawler.bin > /tmp/crawler.log
 Per fare andare crontab -e bisogna lanciare sudo raspi-config e settare la time zone.
 Dopo un reboot crontab -e funziona. Ad un certo però, su pi3-hole crontab non ha più funzionato.
-Vedi il file di readme-pihole di per come ho risolto, ma ho dovuto un'alternativa a crontab.
-Per questo ho usato Anacron.
+Vedi il file di readme-pihole di per come ho risolto, ma ho dovuto usare un'alternativa a crontab.
+Per questo ho usato Anacron, che però, mi manda l'email giovedi sera anziché il venerdì sera.
 
 ## Aggiornare il programma
 Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
