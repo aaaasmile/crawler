@@ -14,6 +14,7 @@
     <div id="container"></div>
     <canvas id="mycanvas" width="400" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
+    <!-- <a href="" id="result"></a> -->
 </body>
 <script>
     function myfun2() {
@@ -78,7 +79,7 @@
             // + ' width="40"'
             // + ' height="14"'
             + '>'
-            + '<ellipse cx="200" cy="80" rx="100" ry="50" />'
+            + '<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />'
             + '</svg>';
         //var svgMarkup = '{{.SvgData}}';
         console.log('svg markup is ', svgMarkup);
@@ -92,6 +93,9 @@
             console.log('Image ok');
             DOMURL.revokeObjectURL(url);
             console.log('canvas data url:', canvas.toDataURL());
+            // let link = document.getElementById("result");
+            // link.setAttribute("href", canvas.toDataURL());
+            // link.innerHTML = "link to download";
         };
         console.log('url to image is ', url)
         img.src = url;
