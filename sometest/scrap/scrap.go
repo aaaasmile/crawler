@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	//sel6month   = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label.btn.btn-link.active`
-	sel6month   = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label.btn.btn-link.active > input[type=radio]`
+	sel_1month  = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`
+	sel_6month  = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
 	sel_svgnode = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
 	sel_spinner = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
 )
@@ -50,18 +50,18 @@ func Scrap() error {
 			fmt.Println("*** initial spinner invisible")
 			return nil
 		}),
-		// click on chart 6 Monate Use Browser Copy Selector for this link
-		chromedp.Click(sel6month, chromedp.NodeVisible),
+		// click on chart 1 Monat Use Browser Copy Selector for this link
+		chromedp.Click(sel_1month, chromedp.NodeVisible),
 		//chromedp.WaitVisible(sel_graph),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Click 6 month done")
+			fmt.Println("*** Click 1 month done")
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
 			log.Println("sleep some seconds...")
-			time.Sleep(2 * time.Second)
+			time.Sleep(2 * time.Second) // this is important because data are loaded in background
 			return nil
 		}),
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
@@ -80,7 +80,7 @@ func Scrap() error {
 	log.Println("run scraping terminated ok")
 	//log.Printf("SVG after get:\n%s", example)
 	outfname := "static/data/chart02.svg"
-	if err = os.WriteFile(outfname, []byte(example), 644); err != nil {
+	if err = os.WriteFile(outfname, []byte(example), 0644); err != nil {
 		return err
 	}
 
@@ -143,7 +143,7 @@ func Scrap2() error {
 		// wait for footer element is visible (ie, page is loaded)
 		chromedp.WaitVisible(`body > footer`),
 		// click on chart 6 Monate Use Browser Copy Selector for this link
-		chromedp.Click(sel6month, chromedp.NodeVisible),
+		chromedp.Click(sel_6month, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Click done")
 			//log.Println("sleep some seconds...")
