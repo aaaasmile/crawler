@@ -12,6 +12,5 @@ func main() {
 	if err := scrap.Scrap(); err != nil {
 		log.Fatal("Scraping error ", err)
 	}
-	//scrap.Scrap2()
 	web.StartServer()
 }
