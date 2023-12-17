@@ -12,8 +12,9 @@ import (
 )
 
 type PageCtx struct {
-	Buildnr string
-	SvgData string
+	Buildnr     string
+	SvgData     string
+	SvgDataBa64 string
 }
 
 const (
@@ -25,17 +26,17 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
 	u, _ := url.Parse(req.RequestURI)
 	log.Println("GET requested ", u)
 
-	svgstr := `<svg height="140" width="500">
+	svgstr := `<svg xmlns="http://www.w3.org/2000/svg">
 	<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />
-	Sorry, your browser does not support inline SVG.  
   </svg>`
 	svgstr = strings.ReplaceAll(svgstr, "\n", "")
 	svgstr = strings.ReplaceAll(svgstr, "\r", "")
 	svgstrtoba := base64.StdEncoding.EncodeToString([]byte(svgstr))
-	svgstr = fmt.Sprintf("data:image/svg+xml;base64, %s", svgstrtoba)
+	svgstrtoba = fmt.Sprintf("data:image/svg+xml;base64, %s", svgstrtoba)
 	pagectx := PageCtx{
-		Buildnr: buildnr,
-		SvgData: svgstr,
+		Buildnr:     buildnr,
+		SvgData:     svgstr,
+		SvgDataBa64: svgstrtoba,
 	}
 
 	templName := "templates/index.html"

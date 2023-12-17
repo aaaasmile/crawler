@@ -12,7 +12,7 @@
 <body>
     <p id="title">Here will be changed</p>
     <div id="container"></div>
-    <canvas id="mycanvas" width="400" height="200"></canvas>
+    <canvas id="mycanvas" width="408" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
     <!-- <a href="" id="result"></a> -->
 </body>
@@ -74,14 +74,14 @@
 
         // https://developer.mozilla.org/en/docs/HTML/Canvas/Drawing_DOM_objects_into_a_canvas
 
-        var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
-            // + ' class=""'
-            // + ' width="40"'
-            // + ' height="14"'
-            + '>'
-            + '<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />'
-            + '</svg>';
-        //var svgMarkup = '{{.SvgData}}';
+        // var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
+        //     // + ' class=""'
+        //     // + ' width="40"'
+        //     // + ' height="14"'
+        //     + '>'
+        //     + '<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />'
+        //     + '</svg>';
+        var svgMarkup = '{{.SvgData}}';
         console.log('svg markup is ', svgMarkup);
         var ctx = canvas.getContext("2d");
         var DOMURL = window.URL || window.webkitURL || window;
