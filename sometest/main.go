@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/aaaasmile/crawler/sometest/scrap"
@@ -8,9 +9,17 @@ import (
 )
 
 func main() {
+	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
+
+	flag.Parse()
 	log.Println("Testing svg scraping and conversion")
-	if err := scrap.Scrap(); err != nil {
-		log.Fatal("Scraping error ", err)
+	if !*skipscrap {
+		if err := scrap.Scrap(); err != nil {
+			log.Fatal("Scraping error ", err)
+		}
+	} else {
+		log.Println("[WARN] scrap skipped")
 	}
+
 	web.StartServer()
 }
