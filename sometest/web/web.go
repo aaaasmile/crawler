@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,6 +31,8 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
   </svg>`
 	svgstr = strings.ReplaceAll(svgstr, "\n", "")
 	svgstr = strings.ReplaceAll(svgstr, "\r", "")
+	svgstrtoba := base64.StdEncoding.EncodeToString([]byte(svgstr))
+	svgstr = fmt.Sprintf("data:image/svg+xml;base64, %s", svgstrtoba)
 	pagectx := PageCtx{
 		Buildnr: buildnr,
 		SvgData: svgstr,

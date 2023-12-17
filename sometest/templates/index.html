@@ -73,13 +73,14 @@
 
         // https://developer.mozilla.org/en/docs/HTML/Canvas/Drawing_DOM_objects_into_a_canvas
 
-        // var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
-        //     + ' class="' + el.attr('class') + '"'
-        //     + ' width="' + el.attr('width') + '"'
-        //     + ' height="' + el.attr('height') + '"'
-        //     + '>'
-        //     + '{{.SvgData}}';
-        var svgMarkup = '{{.SvgData}}';
+        var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
+            // + ' class=""'
+            // + ' width="40"'
+            // + ' height="14"'
+            + '>'
+            + '<ellipse cx="200" cy="80" rx="100" ry="50" />'
+            + '</svg>';
+        //var svgMarkup = '{{.SvgData}}';
         console.log('svg markup is ', svgMarkup);
         var ctx = canvas.getContext("2d");
         var DOMURL = window.URL || window.webkitURL || window;
@@ -87,14 +88,18 @@
         var svgCanv = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
         var url = DOMURL.createObjectURL(svgCanv);
         img.onload = function () {
-            ctx.drawImage(img, 0, 0);
+            ctx.drawImage(img, 0, 0, 400, 140);
             console.log('Image ok');
             DOMURL.revokeObjectURL(url);
-            console.log(canvas.toDataURL());
+            console.log('canvas data url:', canvas.toDataURL());
         };
+        console.log('url to image is ', url)
         img.src = url;
+        //img.src = svgMarkup;
+        //canvas.getContext("2d").drawImage(img,0,0);
+
         console.log('Now change also the title...')
-        document.getElementById("title").innerHTML = '{{.SvgData}}';
+        //document.getElementById("title").innerHTML = '{{.SvgData}}';
     }
 </script>
 
