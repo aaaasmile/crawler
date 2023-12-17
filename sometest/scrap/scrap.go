@@ -51,10 +51,10 @@ func Scrap() error {
 			return nil
 		}),
 		// click on chart 1 Monat Use Browser Copy Selector for this link
-		chromedp.Click(sel_1month, chromedp.NodeVisible),
+		chromedp.Click(sel_6month, chromedp.NodeVisible),
 		//chromedp.WaitVisible(sel_graph),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Click 1 month done")
+			fmt.Println("*** Click month done")
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),

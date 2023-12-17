@@ -4,3 +4,4 @@ crawler.exe
 secret/*.*
 *.db
 sometest/chart.png
+sometest/static/data/*.svg
