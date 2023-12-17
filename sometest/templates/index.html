@@ -61,6 +61,46 @@
 
 </script>
 
+<script type="module">
+    let styleRules = [];
+    var requiredSheets = []; // list of required CSS files
+    for (let i = 0; i < document.styleSheets.length; i++) {
+        const sheet = document.styleSheets[i];
+        if (sheet.href) {
+            const sheetName = sheet.href.split('/').pop();
+            if (requiredSheets.indexOf(sheetName) != -1) {
+                const rules = Array.from(sheet.cssRules).map(rule => rule.cssText);
+                styleRules = styleRules.concat(rules);
+            }
+        }
+    }
+    //var styleText = styleRules.join(' ');
+    var styleNode = document.createCDATASection(styleRules);
+
+    var svgcanv = d3.select("svg");
+    var img = new Image();
+    const serializer = new XMLSerializer();
+    svgcanv.insert('defs', ":first-child");
+    let styleEl = d3.select("svg defs")
+        .append('style')
+        .attr('type', 'text/css');
+
+    styleEl.node().appendChild(styleNode);
+
+    var svgStr = serializer.serializeToString(svgcanv.node());
+    img.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgStr)));
+
+    const bbox = svgcanv.getBoundingClientRect();
+
+    let canvas = document.createElement("canvas");
+
+    canvas.width = bbox.width;
+    canvas.height = bbox.height;
+    canvas.getContext("2d").drawImage(img, 0, 0, bbox.width, bbox.width);
+
+    canvas.parentNode.replaceChild(canvas, svgcanv);
+</script>
+
 </html>
 
 {{end}}
