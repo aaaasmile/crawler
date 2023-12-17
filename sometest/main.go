@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	log.Println("Testin svg scraping and conversion")
-	scrap.Scrap()
+	log.Println("Testing svg scraping and conversion")
+	if err := scrap.Scrap(); err != nil {
+		log.Fatal("Scraping error ", err)
+	}
+	//scrap.Scrap2()
 	web.StartServer()
 }
