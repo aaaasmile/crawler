@@ -12,6 +12,7 @@
     <link href="./static/css/_root.scss?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/_variables.scss?{{.Buildnr}}" rel="stylesheet"> -->
     <link href="./static/css/main.css?{{.Buildnr}}" rel="stylesheet">
+    <link href="./static/css/mystyle.css?{{.Buildnr}}" rel="stylesheet">
     <!-- <script src="./static/lib/d3.v7.js?{{.Buildnr}}"></script> -->
     <title>SVG converter</title>
 </head>
@@ -19,7 +20,7 @@
 <body>
     <p id="title">Here will be changed</p>
     <div id="container"></div>
-    <canvas id="mycanvas" width="408" height="200"></canvas>
+    <canvas id="mycanvas" width="400" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
     <!-- <a href="" id="result"></a> -->
     <div>{{.SvgData}}</div>
@@ -33,9 +34,6 @@
         // canvas.width = 640;
         // canvas.height = 400;
         var canvas = document.getElementById("mycanvas")
-
-        // https://developer.mozilla.org/en/docs/HTML/Canvas/Drawing_DOM_objects_into_a_canvas
-
         // var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
         //     // + ' class=""'
         //     // + ' width="40"'
@@ -45,13 +43,13 @@
         //     + '</svg>';
         var svgMarkup = '{{.SvgData}}';
         console.log('svg markup is ', svgMarkup);
-        var ctx = canvas.getContext("2d");
-        var DOMURL = window.URL || window.webkitURL || window;
-        var img = new Image();
-        var svgCanv = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
-        var url = DOMURL.createObjectURL(svgCanv);
+        const ctx = canvas.getContext("2d");
+        const DOMURL = window.URL || window.webkitURL || window;
+        const img = new Image();
+        const svgCanv = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+        const url = DOMURL.createObjectURL(svgCanv);
         img.onload = function () {
-            ctx.drawImage(img, 0, 0, 400, 140);
+            ctx.drawImage(img, 0, 0);
             console.log('Image ok');
             DOMURL.revokeObjectURL(url);
             console.log('canvas data url:', canvas.toDataURL());
@@ -59,12 +57,12 @@
             // link.setAttribute("href", canvas.toDataURL());
             // link.innerHTML = "link to download";
         };
-        console.log('url to image is ', url)
+        console.log('blob url to image is ', url)
         img.src = url;
         //img.src = svgMarkup;
         //canvas.getContext("2d").drawImage(img,0,0);
 
-        console.log('Now change also the title...')
+        //console.log('Now change also the title...')
         //document.getElementById("title").innerHTML = '{{.SvgData}}';
     }
 </script>
