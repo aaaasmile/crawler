@@ -26,7 +26,7 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
 	var err error
 	u, _ := url.Parse(req.RequestURI)
 	log.Println("GET requested ", u)
-	dat, err := os.ReadFile("static/data/chart01.svg")
+	dat, err := os.ReadFile("static/data/chart02.svg")
 	if err != nil {
 		return err
 	}
