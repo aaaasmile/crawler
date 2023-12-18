@@ -23,7 +23,7 @@
     <canvas id="mycanvas" width="400" height="200"></canvas>
     <button type="button" onclick="myfun()">Try It</button>
     <!-- <a href="" id="result"></a> -->
-    <div>{{.SvgData}}</div>
+    <div id="thesvg">{{.SvgData}}</div>
 </body>
 
 <script>
@@ -42,11 +42,32 @@
         //     + '<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />'
         //     + '</svg>';
         var svgMarkup = '{{.SvgData}}';
-        console.log('svg markup is ', svgMarkup);
+        //console.log('svg markup is ', svgMarkup);
+        var sheets = document.styleSheets;
+        var styleStr = '';
+        Array.prototype.forEach.call(sheets, function (sheet) {
+            try {
+                //console.log('sheet: ', sheet)
+                styleStr += Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
+                    return a + b.cssText; // just concatenate all our cssRules' text
+                }, "");
+            }
+            catch (e) { console.log(e); }
+        });
+        //console.log('style str ', styleStr )
+        var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        var style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        style.innerHTML = styleStr;
+        defs.appendChild(style);
+        // now append it in your svg node
+        var thesvg = document.getElementById("thesvg").firstChild;
+        thesvg.insertBefore(defs, thesvg.firstElementChild);
+        var svgMarkupWithStyle = (new XMLSerializer()).serializeToString(thesvg);
+
         const ctx = canvas.getContext("2d");
         const DOMURL = window.URL || window.webkitURL || window;
         const img = new Image();
-        const svgCanv = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+        const svgCanv = new Blob([svgMarkupWithStyle], { type: "image/svg+xml;charset=utf-8" });
         const url = DOMURL.createObjectURL(svgCanv);
         img.onload = function () {
             ctx.drawImage(img, 0, 0);
