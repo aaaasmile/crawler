@@ -2,12 +2,14 @@ package scrap
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"golang.design/x/clipboard"
 )
 
 const (
@@ -82,5 +84,16 @@ func Scrap() error {
 	}
 
 	log.Println("svg file written ", outfname)
+	return nil
+}
+
+func EncodeFont() error {
+	dat, err := os.ReadFile("static/css/fonts/DINPro-Regular.woff")
+	if err != nil {
+		return err
+	}
+	encoded := base64.StdEncoding.EncodeToString(dat)
+	clipboard.Write(clipboard.FmtText, []byte(encoded))
+	fmt.Println("base64: ", encoded)
 	return nil
 }

@@ -32,7 +32,8 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
 	}
 
 	svgstr := string(dat)
-	svgstr = strings.ReplaceAll(svgstr, "'23", "23")
+	svgstr = strings.ReplaceAll(svgstr, "'2", "2")
+	svgstr = strings.ReplaceAll(svgstr, "'3", "3")
 	svgstr = strings.ReplaceAll(svgstr, "\n", "")
 	svgstr = strings.ReplaceAll(svgstr, "\r", "")
 	svgstrtoba := base64.StdEncoding.EncodeToString([]byte(svgstr))

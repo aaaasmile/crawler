@@ -47,9 +47,12 @@
                 if (sheet.href) {
                     var sheetName = sheet.href.split('/').pop();
                     if (sheetName.includes(requiredSheet)) {
-                        styleStr += Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
+                        const csspartStr = Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
                             return a + b.cssText;
                         }, "");
+                        const fontfix = csspartStr.replaceAll('fonts/DINPro-Regular.woff', 'static/css/fonts/DINPro-Regular.woff')
+                        styleStr += fontfix;
+                        //styleStr += csspartStr;
                     }
                 }
             }

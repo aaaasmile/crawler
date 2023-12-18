@@ -10,7 +10,6 @@ import (
 
 func main() {
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
-
 	flag.Parse()
 	log.Println("Testing svg scraping and conversion")
 	if !*skipscrap {
