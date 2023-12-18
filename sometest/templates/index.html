@@ -21,13 +21,27 @@
     <p id="title">Here will be changed</p>
     <div id="container"></div>
     <canvas id="mycanvas" width="400" height="200"></canvas>
-    <button type="button" onclick="myfun()">Try It</button>
+    <button type="button" onclick="convSvgToPng()">Try It</button>
     <!-- <a href="" id="result"></a> -->
     <div id="thesvg">{{.SvgData}}</div>
 </body>
 
 <script>
-    function myfun() {
+    function convSvgToPng() {
+        function triggerDownload(imgURI) {
+            var evt = new MouseEvent('click', {
+                view: window,
+                bubbles: false,
+                cancelable: true
+            });
+            const targetFname = 'hen_saved_image.png';
+            var a = document.createElement('a');
+            a.setAttribute('download', targetFname);
+            a.setAttribute('href', imgURI);
+            a.setAttribute('target', '_blank');
+            a.dispatchEvent(evt);
+            console.log('file download ', targetFname);
+        }
         console.log('Try to make canvas')
         //var el = d3.select("svg");
         // var canvas = document.createElement("canvas");
@@ -73,10 +87,15 @@
             ctx.drawImage(img, 0, 0);
             console.log('Image ok');
             DOMURL.revokeObjectURL(url);
-            console.log('canvas data url:', canvas.toDataURL());
+            //console.log('canvas data url:', canvas.toDataURL());
             // let link = document.getElementById("result");
             // link.setAttribute("href", canvas.toDataURL());
             // link.innerHTML = "link to download";
+            var imgURI = canvas
+                .toDataURL('image/png')
+                .replace('image/png', 'image/octet-stream');// returns a data URI containing a representation of the image in the format specified by the type parameter
+
+            triggerDownload(imgURI);
         };
         console.log('blob url to image is ', url)
         img.src = url;

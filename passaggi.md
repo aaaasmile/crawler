@@ -36,6 +36,28 @@ Per capire come funziona la visualizzazione del svg nel canvas sono partito dall
 che dopo diverse prove ha funzionato. Per il file scaricato chart02.svg, la sua visualizzazione 
 in html funziona, ma non quella nel canvas per via, credo, degli styles.
 
+### svg nel canvas
+Ho impiegato un po' a creare un canvas che disegni il mio svg scaricato dal sito dei chart.
+Il motivo è che, nel canvas, l'immagine svg deve inglobare al suo interno gli stylesheets che
+servono per mostrare l'immagine. Nel mio caso è il file main.css. Il procedimento è quello di
+prendere il file svg usando document.getElementById. 
+Nel mio caso è il firstchild del div id="thesvg" (nota che è una property e non una funzione).
+Ora con l'elemento del DOM svg in mano, si deve inserire al primo posto il contenuto di main.css
+ (basta solo questo e non tutti gli altri css) in un Dom def->style. Il mio dom svg ha ora 17 children node, anzichè 16 originali. Ora basta ricreare il sorgente xml e per questo si 
+ usa (new XMLSerializer()).serializeToString(thesvg). Il sorgente xml diventa il contenuto di
+ un Blob, che a sua volta viene identificato da una url (si usa DOMURL.createObjectURL() ).
+ Questa url divena il sorgente dell'immagine da mostrare nel canvas (img.src = url e img.onload).  
+Due aspetti non sono ancora corretti. Il primo sono i font. Nel trace del service noto
+
+    GET requested  /svg/fonts/DINPro-Regular.woff
+che signica che la url del font invece di fonts/DINPro-Regular.woff dovrebbe essere 
+static/css/fonts/DINPro-Regular.woff
+La seconda è di natura cosmetica, ma nella Array.prototype.forEach.call(sheets, function(sheet)
+dovrebbe comparire solo main.css.
+
+Queste le risorse usate:
+- https://stackoverflow.com/questions/41340468/convert-svg-to-image-in-png
+- https://stackoverflow.com/questions/41571622/how-to-include-css-style-when-converting-svg-to-png
 
 ## TODO
  - vedi di mettere l'immagine svg del chart nella mail. Il tag svg ha bisogno dei css.
