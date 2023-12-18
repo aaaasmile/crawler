@@ -1,12 +1,14 @@
 package web
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strings"
 	"text/template"
 	"time"
@@ -66,7 +68,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func StartServer() {
+func StartServer(cr <-chan struct{}) {
 	//scrap.Scrap()
 	serverurl := "127.0.0.1:5903"
 	rootURLPattern := "/svg/"
@@ -86,7 +88,29 @@ func StartServer() {
 		IdleTimeout:  time.Second * 60,
 		Handler:      nil,
 	}
-	if err := srv.ListenAndServe(); err != nil {
-		log.Println("Server is not listening anymore: ", err)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println("Server is not listening anymore: ", err)
+		}
+	}()
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt) //We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	log.Println("Enter in server loop")
+loop:
+	for {
+		select {
+		case <-sig:
+			log.Println("stop because interrupt")
+			break loop
+		case <-cr:
+			log.Println("stop because service shutdown")
+			break loop
+		}
 	}
+	var wait time.Duration
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	srv.Shutdown(ctx)
+
+	log.Println("Bye, service")
 }

@@ -11,6 +11,15 @@ import (
 func main() {
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
 	flag.Parse()
+	stopch := make(chan struct{})
+	msgch := make(chan string)
+
+	go func() {
+		web.StartServer(stopch)
+		log.Println("server exit")
+		msgch <- "OK"
+	}()
+
 	log.Println("Testing svg scraping and conversion")
 	if !*skipscrap {
 		if err := scrap.Scrap(); err != nil {
@@ -20,5 +29,6 @@ func main() {
 		log.Println("[WARN] scrap skipped")
 	}
 
-	web.StartServer()
+	msg := <-msgch
+	log.Println("terminate with: ", msg)
 }

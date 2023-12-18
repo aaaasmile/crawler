@@ -54,6 +54,11 @@ che signica che la url del font invece di fonts/DINPro-Regular.woff dovrebbe ess
 static/css/fonts/DINPro-Regular.woff
 La seconda è di natura cosmetica, ma nella Array.prototype.forEach.call(sheets, function(sheet)
 dovrebbe comparire solo main.css.
+Per i font ho provato questa sequenza in main.css:
+src: url('data:application/font-woff;charset=utf-8;base64,d09GRk9...');
+L'ho provato per il font DINPro-Regular.woff, che è quello che carica quando viene mostrato il grafico. 
+Il problema è che nel canvas non viene usato anche se è embedded. Allora ho ripristinato main.css
+in quanto si carica più velocemente.
 
 Queste le risorse usate:
 - https://stackoverflow.com/questions/41340468/convert-svg-to-image-in-png
