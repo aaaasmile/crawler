@@ -1,6 +1,7 @@
 {{define "base"}}
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -39,12 +40,18 @@
         //console.log('svg markup is ', svgMarkup);
         var sheets = document.styleSheets;
         var styleStr = '';
+        const requiredSheet = 'main.css';
         Array.prototype.forEach.call(sheets, function (sheet) {
             try {
                 //console.log('sheet: ', sheet)
-                styleStr += Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
-                    return a + b.cssText; 
-                }, "");
+                if (sheet.href) {
+                    var sheetName = sheet.href.split('/').pop();
+                    if (sheetName.includes(requiredSheet)) {
+                        styleStr += Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
+                            return a + b.cssText;
+                        }, "");
+                    }
+                }
             }
             catch (e) { console.log(e); }
         });
@@ -77,6 +84,7 @@
         img.src = url;
     }
 </script>
+
 </html>
 
 {{end}}

@@ -58,6 +58,7 @@ dovrebbe comparire solo main.css.
 Queste le risorse usate:
 - https://stackoverflow.com/questions/41340468/convert-svg-to-image-in-png
 - https://stackoverflow.com/questions/41571622/how-to-include-css-style-when-converting-svg-to-png
+- https://stackoverflow.com/questions/49666196/convert-svg-to-png-with-styles
 
 ## TODO
  - vedi di mettere l'immagine svg del chart nella mail. Il tag svg ha bisogno dei css.
