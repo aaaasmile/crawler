@@ -1,28 +1,19 @@
 {{define "base"}}
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- <link href="./static/css/_card.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_highcharts.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_palette.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_reboot.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_root.scss?{{.Buildnr}}" rel="stylesheet">
-    <link href="./static/css/_variables.scss?{{.Buildnr}}" rel="stylesheet"> -->
     <link href="./static/css/main.css?{{.Buildnr}}" rel="stylesheet">
     <link href="./static/css/mystyle.css?{{.Buildnr}}" rel="stylesheet">
-    <!-- <script src="./static/lib/d3.v7.js?{{.Buildnr}}"></script> -->
     <title>SVG converter</title>
 </head>
 
 <body>
-    <p id="title">Here will be changed</p>
-    <div id="container"></div>
+    <p id="title">We have an svg that will be converted in an image</p>
     <canvas id="mycanvas" width="400" height="200"></canvas>
-    <button type="button" onclick="convSvgToPng()">Try It</button>
-    <!-- <a href="" id="result"></a> -->
+    <button type="button" onclick="convSvgToPng()">Convert to png</button>
+    <p>The svg is below</p>
     <div id="thesvg">{{.SvgData}}</div>
 </body>
 
@@ -43,18 +34,7 @@
             console.log('file download ', targetFname);
         }
         console.log('Try to make canvas')
-        //var el = d3.select("svg");
-        // var canvas = document.createElement("canvas");
-        // canvas.width = 640;
-        // canvas.height = 400;
         var canvas = document.getElementById("mycanvas")
-        // var svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg"'
-        //     // + ' class=""'
-        //     // + ' width="40"'
-        //     // + ' height="14"'
-        //     + '>'
-        //     + '<ellipse cx="200" cy="80" rx="100" ry="50" style="fill:yellow;stroke:purple;stroke-width:2" />'
-        //     + '</svg>';
         var svgMarkup = '{{.SvgData}}';
         //console.log('svg markup is ', svgMarkup);
         var sheets = document.styleSheets;
@@ -63,7 +43,7 @@
             try {
                 //console.log('sheet: ', sheet)
                 styleStr += Array.prototype.reduce.call(sheet.cssRules, function (a, b) {
-                    return a + b.cssText; // just concatenate all our cssRules' text
+                    return a + b.cssText; 
                 }, "");
             }
             catch (e) { console.log(e); }
@@ -73,7 +53,6 @@
         var style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
         style.innerHTML = styleStr;
         defs.appendChild(style);
-        // now append it in your svg node
         var thesvg = document.getElementById("thesvg").firstChild;
         thesvg.insertBefore(defs, thesvg.firstElementChild);
         var svgMarkupWithStyle = (new XMLSerializer()).serializeToString(thesvg);
@@ -88,9 +67,6 @@
             console.log('Image ok');
             DOMURL.revokeObjectURL(url);
             //console.log('canvas data url:', canvas.toDataURL());
-            // let link = document.getElementById("result");
-            // link.setAttribute("href", canvas.toDataURL());
-            // link.innerHTML = "link to download";
             var imgURI = canvas
                 .toDataURL('image/png')
                 .replace('image/png', 'image/octet-stream');// returns a data URI containing a representation of the image in the format specified by the type parameter
@@ -99,14 +75,8 @@
         };
         console.log('blob url to image is ', url)
         img.src = url;
-        //img.src = svgMarkup;
-        //canvas.getContext("2d").drawImage(img,0,0);
-
-        //console.log('Now change also the title...')
-        //document.getElementById("title").innerHTML = '{{.SvgData}}';
     }
 </script>
-
 </html>
 
 {{end}}
