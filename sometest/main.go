@@ -29,6 +29,10 @@ func main() {
 		log.Println("[WARN] scrap skipped")
 	}
 
+	if err := scrap.SaveToPng(); err != nil {
+		log.Println("[ERR] error on save png ", err)
+	}
+
 	msg := <-msgch
 	log.Println("terminate with: ", msg)
 }

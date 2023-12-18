@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
 	"golang.design/x/clipboard"
 )
@@ -95,5 +98,74 @@ func EncodeFont() error {
 	encoded := base64.StdEncoding.EncodeToString(dat)
 	clipboard.Write(clipboard.FmtText, []byte(encoded))
 	fmt.Println("base64: ", encoded)
+	return nil
+}
+
+func SaveToPng() error {
+	// reference: https://github.com/chromedp/examples/blob/master/download_file/main.go
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		// chromedp.WithDebugf(log.Printf),
+	)
+	defer cancel()
+
+	done := make(chan string, 1)
+
+	chromedp.ListenTarget(ctx, func(v interface{}) {
+		if ev, ok := v.(*browser.EventDownloadProgress); ok {
+			completed := "(unknown)"
+			if ev.TotalBytes != 0 {
+				completed = fmt.Sprintf("%0.2f%%", ev.ReceivedBytes/ev.TotalBytes*100.0)
+			}
+			log.Printf("state: %s, completed: %s\n", ev.State.String(), completed)
+			if ev.State == browser.DownloadProgressStateCompleted {
+				done <- ev.GUID
+				close(done)
+			}
+		}
+	})
+
+	// create a timeout
+	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	var err error
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// navigate to a page, wait for an element, click
+	urlstr := "http://localhost:5903/svg/"
+	if err = chromedp.Run(ctx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Navigate to svg converter")
+			return nil
+		}),
+		chromedp.Navigate(urlstr),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Wait visible")
+			return nil
+		}),
+		browser.
+			SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
+			WithDownloadPath(wd).
+			WithEventsEnabled(true),
+		chromedp.Click(`body > button`, chromedp.NodeVisible),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Click done")
+			return nil
+		}),
+	); err != nil && !strings.Contains(err.Error(), "net::ERR_ABORTED") {
+		// Note: Ignoring the net::ERR_ABORTED page error is essential here
+		// since downloads will cause this error to be emitted, although the
+		// download will still succeed.
+		return err
+	}
+	log.Println("save to png started...")
+	// This will block until the chromedp listener closes the channel
+	guid := <-done
+
+	log.Printf("wrote %s", filepath.Join(wd, guid))
+
 	return nil
 }
