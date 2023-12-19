@@ -90,7 +90,7 @@ Dopo un reboot crontab -e funziona. Ad un certo però, su pi3-hole crontab non h
 Vedi il file di readme-pihole di per come ho risolto, ma ho dovuto usare un'alternativa a crontab.
 Per questo ho usato Anacron, che però, mi manda l'email giovedi sera anziché il venerdì sera.
 
-## Aggiornare il programma
+## Aggiornare il programma (nota che non uso più pi3 per via dello scraper)
 Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
 poi con WSL:
 
@@ -118,6 +118,24 @@ Per verdere la lista dei branch:
     git branch
     git checkout main
     git pull
+
+## Scraper su Ubuntu (deployment corrente)
+Ho dovuto installare google-chrome in quanto ho ricevuto il seguente errore:
+ 
+    "google-chrome": executable file not found in $PATH
+Ho installato google-chrome con la seguente sequenza:
+
+    cd tmp
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
+    sudo apt-get --fix-broken install
+
+Qui https://github.com/geziyor/geziyor/issues/27 viene spiegato il problema.
+Un altro link utile è: https://github.com/Zenika/alpine-chrome
+Il prompt che ottengo:
+
+    google-chrome --version
+    Google Chrome 120.0.6099.109
 
 ## Email Relay su invido.it
 Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non ci sono riuscito, vedi passaggi_gmail.md).
