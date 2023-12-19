@@ -61,7 +61,7 @@ func (sc *Scrap) Scrap(dbPath string) error {
 		charturl := stockItem.ChartURL // `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
 		err = sc.scrapItem(charturl, int(stockItem.ID))
 		if err != nil {
-			log.Println("error on scraping ", charturl) // continue scraping ignoring wrong items
+			log.Println("error on scraping ", charturl, err) // continue scraping ignoring wrong items
 		}
 	}
 	return nil
