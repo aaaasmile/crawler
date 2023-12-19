@@ -28,6 +28,6 @@ func GetChartPNGFullFileName(id int) string {
 }
 
 func GetChartPNGFileNameOnly(id int) string {
-	png_filename := fmt.Sprintf("chart_%02d.png", id)
+	png_filename := fmt.Sprintf("chart_%d.png", id)
 	return png_filename
 }

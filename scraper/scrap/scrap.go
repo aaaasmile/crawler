@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/scraper/util"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
@@ -37,16 +38,29 @@ type ScrapItem struct {
 }
 
 type Scrap struct {
-	_svgs []*ScrapItem
+	liteDB *db.LiteDB
+	_svgs  []*ScrapItem
 }
 
-func (sc *Scrap) Scrap() error {
+func (sc *Scrap) Scrap(dbPath string) error {
+	sc.liteDB = &db.LiteDB{
+		SqliteDBPath: dbPath,
+	}
+	if err := sc.liteDB.OpenSqliteDatabase(); err != nil {
+		return err
+	}
+	var err error
 	sc._svgs = []*ScrapItem{}
-
-	charturl := `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
-	err := sc.scrapItem(charturl, 1)
+	stockList, err := sc.liteDB.SelectEnabledStockInfos(100)
 	if err != nil {
-		log.Println("error on scraping ", charturl) // continue scraping ignoring wrong items
+		return err
+	}
+	for _, stockItem := range stockList {
+		charturl := stockItem.ChartURL // `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
+		err = sc.scrapItem(charturl, int(stockItem.ID))
+		if err != nil {
+			log.Println("error on scraping ", charturl) // continue scraping ignoring wrong items
+		}
 	}
 	return nil
 }

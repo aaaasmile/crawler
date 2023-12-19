@@ -6,7 +6,7 @@ I chart vengono scaricati e inviati con una mail usando relay di invido.it.
 
 Le credential sono nel db
 
-Per avere cgo bisogna settare il path:
+Per avere cgo (richiesto da go-sqlite3) bisogna settare il path:
 
     $env:path="C:\TDM-GCC-64\bin;" + $env:path
 
