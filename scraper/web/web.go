@@ -2,33 +2,54 @@ package web
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 )
 
 type PageCtx struct {
-	Buildnr     string
-	SvgData     string
-	SvgDataBa64 string
+	Buildnr string
+	SvgData string
 }
 
 const (
 	buildnr = "00.00.10.00"
 )
 
-func handleGet(w http.ResponseWriter, req *http.Request) error {
+const (
+	datadir = "static/data/"
+)
+
+func handleGetID(w http.ResponseWriter, req *http.Request) error {
 	var err error
 	u, _ := url.Parse(req.RequestURI)
 	log.Println("GET requested ", u)
-	dat, err := os.ReadFile("static/data/chart02.svg")
+	match, err := regexp.MatchString(".*svg/([0-9]+)$", u.String())
+	if err != nil {
+		return err
+	}
+	if !match {
+		return fmt.Errorf("svg id not recognized")
+	}
+	aa := strings.Split(u.String(), "/")
+	num_str := aa[len(aa)-1]
+	num_id, err := strconv.Atoi(num_str)
+	if err != nil {
+		return err
+	}
+	//fmt.Println("**>", match)
+	svg_filename := fmt.Sprintf("chart%02d.svg", num_id)
+	svg_fullfilename := filepath.Join(datadir, svg_filename)
+	dat, err := os.ReadFile(svg_fullfilename)
 	if err != nil {
 		return err
 	}
@@ -38,12 +59,9 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
 	svgstr = strings.ReplaceAll(svgstr, "'3", "3")
 	svgstr = strings.ReplaceAll(svgstr, "\n", "")
 	svgstr = strings.ReplaceAll(svgstr, "\r", "")
-	svgstrtoba := base64.StdEncoding.EncodeToString([]byte(svgstr))
-	svgstrtoba = fmt.Sprintf("data:image/svg+xml;base64, %s", svgstrtoba)
 	pagectx := PageCtx{
-		Buildnr:     buildnr,
-		SvgData:     svgstr,
-		SvgDataBa64: svgstrtoba,
+		Buildnr: buildnr,
+		SvgData: svgstr,
 	}
 
 	templName := "templates/index.html"
@@ -61,7 +79,7 @@ func handleGet(w http.ResponseWriter, req *http.Request) error {
 func apiHandler(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case "GET":
-		if err := handleGet(w, req); err != nil {
+		if err := handleGetID(w, req); err != nil {
 			log.Println("Error on process request: ", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
