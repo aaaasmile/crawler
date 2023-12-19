@@ -65,8 +65,21 @@ Queste le risorse usate:
 - https://stackoverflow.com/questions/41571622/how-to-include-css-style-when-converting-svg-to-png
 - https://stackoverflow.com/questions/49666196/convert-svg-to-png-with-styles
 
+### svg png nella Mail
+Quando il programma riesce a scaricare il svg ed a convertirlo in png, basta che poi metta
+il file nella directory data. Il nome è chart_{id}.png, dove id è la primary key del record nel db di 
+stocklist (vedi la funzione buildChartListFromLastDown). Poi si tratta di ripristinare il tag img nel 
+template della mail
+    
+    <img src="cid:{{.ImgName}}" alt="{{.CurrentPrice}}" />
+Non va chiamata la funzione buildChartListFromLastDown, che comunque va ripristinata nel nome del file,
+ma nella buildTheChartList, dove ho messo il TODO.
+Così ho due exe che vanno in cascata. Il primo scarica i files svg e li converte in png per ogni stockprice.
+Il secondo programma riceve i dati dei prezzi, aggiunge il file png scaricato del chart ed invia la mail.  
+
 ## TODO
- - vedi di mettere l'immagine svg del chart nella mail. Il tag svg ha bisogno dei css.
+ - vedi di mettere l'immagine svg del chart nella mail. Manca lo scraping partendo dal db.
+ - nel download dello scrap, il blocking del download deve avere un timeout. 
 
 ## Deployment
 Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole

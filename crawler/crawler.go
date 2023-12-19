@@ -157,6 +157,7 @@ loop:
 				chartItem.SimpleDescr = v.SimpleDescr
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
+				// TODO chartItem.DownloadFilename from svg to png converter GetPngFnameFromScraped(res.ID)
 				if chartItem.PriceInfo != nil {
 					priceCurr := chartItem.PriceInfo.Price
 					totval := priceCurr * v.Quantity

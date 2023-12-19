@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	mathrand "math/rand"
 	"mime"
@@ -242,7 +241,7 @@ func embedImgFile(fullname string, w *bytes.Buffer, boundary string) (string, er
 		log.Println("File error on ", fullname, err)
 		return "", err
 	}
-	raw, err := ioutil.ReadFile(fullname)
+	raw, err := os.ReadFile(fullname)
 	if err != nil {
 		log.Println("Read file error: ", fullname, err)
 		return "", err
