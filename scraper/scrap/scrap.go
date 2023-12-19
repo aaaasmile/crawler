@@ -43,6 +43,10 @@ type Scrap struct {
 }
 
 func (sc *Scrap) Scrap(dbPath string) error {
+	if err := util.CleanSVGPNGData(); err != nil {
+		return err
+	}
+
 	sc.liteDB = &db.LiteDB{
 		SqliteDBPath: dbPath,
 	}

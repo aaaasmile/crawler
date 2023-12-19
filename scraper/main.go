@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/aaaasmile/crawler/scraper/scrap"
 	"github.com/aaaasmile/crawler/scraper/web"
 )
 
 func main() {
+	start := time.Now()
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
 	var autofinish = flag.Bool("autofinish", false, "terminate when all scrap anconversions are finished")
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
@@ -46,4 +48,7 @@ func main() {
 	msg := <-msgch
 	log.Println("processed files: ", sc.ReportProcessed())
 	log.Println("terminate with: ", msg)
+	t := time.Now()
+	elapsed := t.Sub(start)
+	log.Printf("That's all folks. (elapsed time %v)\n", elapsed)
 }
