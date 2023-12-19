@@ -88,6 +88,7 @@ func (sc *Scrap) SaveToPng() error {
 		}
 	}
 	sc._svgs = aa
+	log.Println("all svg to png files processed ", len(aa))
 	return nil
 }
 

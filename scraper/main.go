@@ -12,7 +12,7 @@ import (
 func main() {
 	start := time.Now()
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
-	var noautofinish = flag.Bool("noautofinish", true, "avoid termination when all scraps anconversions are finished (to inspect the web server)")
+	var noautofinish = flag.Bool("noautofinish", false, "avoid termination when all scraps anconversions are finished (to inspect the web server)")
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
 	var dbpath = flag.String("dbpath", "../chart-info.db", "path to the db")
 	flag.Parse()
@@ -40,7 +40,8 @@ func main() {
 			log.Println("[ERR] error on save png ", err)
 		}
 	}
-	if !*noautofinish {
+	blocked := *noautofinish
+	if !blocked {
 		log.Println("all stuff done")
 		stopch <- struct{}{}
 	}
