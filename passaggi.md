@@ -17,18 +17,18 @@ Sul mio mini-k7 per effettuare un build devo usare:
 ## Nuovo sito aprile 2023
 Il service del chart è stato aggiornato in 04.23. Non ci sono più chart
 in formato gif ma svg su un sito tutto nuovo. Per salvare le figure 
-in formato svg vedi la sotto directory sometest. Il crawler  github.com/gocolly/colly
+in formato svg vedi la sotto directory scraper. Il crawler  github.com/gocolly/colly
 non sembra in grado di scaricare html che si aggiorna in background. Per questo
 ho cominciato a scaricare i chart usando github.com/chromedp (vedi somtest dir).
 Al momento ho eliminato la sezione delle immagini dal template (tag img)
 
-## svg (progetto sometest)
+## svg (progetto scraper)
 Le nuove immagini sono in formato svg. Però hanno anche il tag class che deve essere
-incluso. Nella directory "sometest", riesco a scaricare il file svg senza problemi 
+incluso. Nella directory "scraper", riesco a scaricare il file svg senza problemi 
 (posizionarsi sul chart 6 mesi, però, non è triviale), però
 quando lo apro risulta nero. 
 Il processo di conversione avviene in due step. Per prima cosa uso uno scrap per eseguire
-il download del file svg, che al momento viene messo in sometest/static/data/
+il download del file svg, che al momento viene messo in scraper/static/data/
 Poi uso un http server per mostrare il file svg e fare in modo che attraverso il canvas diventi
 un'immagine png. Lo style per il grafico è messo dentro al file main.css che ho trovato quando
 ho salvato la pagina dal browser sul mio hard disk.

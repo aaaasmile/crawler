@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9 // indirect
+	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/golang/protobuf v1.4.3 // indirect
