@@ -14,7 +14,8 @@ The stock list is stored into a sqlite database created with the sql script stoc
 The Scraper is needed to convert complex svg files with styles into a simple png file, that it is easy to embed inside an email.
 The Svg To Png conversion is done using an embedded Web Server that draw the svg inside a canvas with all svg styles embedded and it triggers the download by an automatic button click. The Web Server could also be accessed by within a normal browser with:
 
-    go scraper/main.go -noautofinish
+    cd scraper
+    go main.go -noautofinish
     http://localhost:5903/svg/3   
     
 Here 3, at the end of the url, is the image id, for eample for the file chart03.svg inside the static/data folder. 

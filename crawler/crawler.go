@@ -2,12 +2,10 @@ package crawler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +14,7 @@ import (
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
 	"github.com/aaaasmile/crawler/mail"
+	"github.com/aaaasmile/crawler/scraper/util"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -74,6 +73,19 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 	return nil
 }
 
+const (
+	datapngdir = "./data/"
+)
+
+func getChartPNGFullFileNameIfExist(id int) string {
+	png_filename := util.GetChartPNGFileNameOnly(id)
+	png_fullfilename := filepath.Join(datapngdir, png_filename)
+	if _, err := os.Stat(png_fullfilename); err != nil {
+		return ""
+	}
+	return png_fullfilename
+}
+
 func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 	log.Println("Build list from last download")
 
@@ -85,12 +97,11 @@ func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 	log.Println("Found stocks ", len(stockList))
 	for _, v := range stockList {
 		chartItem := idl.ChartInfo{}
-		//fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
 		chartItem.Description = v.Description
 		chartItem.MoreInfoURL = v.MoreInfoURL
 		chartItem.SimpleDescr = v.SimpleDescr
 		chartItem.ChartURL = v.ChartURL
-		//chartItem.DownloadFilename = fileNameDst
+		chartItem.DownloadFilename = getChartPNGFullFileNameIfExist(int(v.ID))
 
 		cc.list = append(cc.list, &chartItem)
 	}
@@ -157,7 +168,7 @@ loop:
 				chartItem.SimpleDescr = v.SimpleDescr
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
-				// TODO chartItem.DownloadFilename from svg to png converter GetPngFnameFromScraped(res.ID)
+				chartItem.DownloadFilename = getChartPNGFullFileNameIfExist(int(res.ID))
 				if chartItem.PriceInfo != nil {
 					priceCurr := chartItem.PriceInfo.Price
 					totval := priceCurr * v.Quantity
@@ -251,13 +262,6 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	return nil
 }
 
-func (cc *CrawlerOfChart) fillWithSomeTesdata() {
-	// example without the crawler
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-}
-
 func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
@@ -304,55 +308,7 @@ func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoCh
 			sent = true
 			chItem <- &item
 		}
-		//} else if strings.HasPrefix(hh, "Aktuelle Entwicklung") {
-		// Sezione di prove che non funzionano
-		//fmt.Println("*** H ", hh)
-		//svg := e.DOM.ChildrenFiltered("svg")
-		// svghtml, err := e.DOM.ChildrenMatcher("div > div").Html()
-		// if err != nil {
-		// 	log.Println("SVG html error", err)
-		// 	item.Error = err
-		// 	sent = true
-		// 	chItem <- &item
-		// }
-		// e.ForEach("div.card-body > div", func(_ int, el *colly.HTMLElement) {
-		// 	//svghtml, _ := el.DOM.ChildrenFiltered(".chart-container").Html()
-		// 	//svghtml := el.DOM.ChildrenFiltered(".chart-container")
-		// 	svghtml, _ := el.DOM.Html()
-		// 	fmt.Println("*** SVG ", svghtml)
-		// })
-		// svg := e.DOM.ChildrenFiltered("div.card-body ")
-		// svghtml, _ := svg.Html()
-		// fmt.Println("*** SVG ", svghtml)
-
-		//fileNameDst := fmt.Sprintf("data/chart_%d.svg", id)
-		//}
 	})
-	// On every a element which has href attribute call callback
-	// c.OnHTML("img[src]", func(e *colly.HTMLElement) {
-	// 	link := e.Attr("src")
-	// 	alt := e.Attr("alt")
-	// 	if strings.HasPrefix(link, "getChart") {
-	// 		fileNameDst := fmt.Sprintf("data/chart_%d.png", id)
-	// 		log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
-	// 		item := InfoChart{
-	// 			Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
-	// 			Link:    link,
-	// 			Text:    e.Text,
-	// 			FileDst: fileNameDst,
-	// 			ID:      id,
-	// 		}
-	// 		err := downloadFile(serverURI+item.Link, item.FileDst)
-	// 		if err != nil {
-	// 			log.Println("Downloading image error", err)
-	// 			item.Error = err
-	// 		}
-	// 		found = true
-	// 		chItem <- &item
-	// 	}
-	// 	//fmt.Println("*** link image", link, alt)
-	// 	//something like: *** link image getChart.asp?action=getChart&chartID=71C233968F97F40CD296DA8A36E792DF6A50394A IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
-	// })
 
 	c.OnRequest(func(r *colly.Request) {
 		log.Println("Visiting", r.URL.String())
@@ -374,34 +330,6 @@ func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoCh
 		item.Error = fmt.Errorf("chart not recognized (service html layout changed?) on %s", URL)
 		chItem <- &item
 	}
-}
-
-func downloadFile(URL, fileName string) error {
-	//Get the response bytes from the url
-	log.Println("Downloading the URL to the filename: ", fileName)
-	response, err := http.Get(URL)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		return errors.New("received non 200 response code")
-	}
-	//Create a empty file
-	file, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	//Write the bytes to the fiel
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
-	time.Sleep(200)
-	return nil
 }
 
 func parseForPriceInfo(pricestr string, closed string) (*db.Price, error) {
