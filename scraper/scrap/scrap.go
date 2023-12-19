@@ -230,11 +230,16 @@ func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) (*ScrapItem, error) {
 		return nil, err
 	}
 	log.Println("save to png started...", scrapItem._id)
+	chTimeout := make(chan struct{})
+	timeout := 30 * time.Second
+	time.AfterFunc(timeout, func() {
+		chTimeout <- struct{}{}
+		close(chTimeout)
+	})
 	// This will block until the chromedp listener closes the channel
 loop:
 	for {
 		select {
-		// TODO timeout
 		case guid := <-done:
 			srcpath := filepath.Join(wd, guid)
 			destPath := util.GetChartPNGFullFileName(scrapItem._id)
@@ -248,6 +253,9 @@ loop:
 			break loop
 		case <-cr:
 			log.Println("stop because service shutdown")
+			break loop
+		case <-chTimeout:
+			log.Println("Timeout on save to png, something was blocked")
 			break loop
 		}
 	}
