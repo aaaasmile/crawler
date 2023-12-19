@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aaaasmile/crawler/scraper/util"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
 	"golang.design/x/clipboard"
@@ -23,14 +24,20 @@ const (
 )
 
 func Scrap() error {
-	// create chrome instance
+	charturl := `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
+	err := scrapItem(charturl, 1)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func scrapItem(charturl string, id int) error {
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
-		// chromedp.WithDebugf(log.Printf),
 	)
 	defer cancel()
 
-	// create a timeout
 	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -41,7 +48,7 @@ func Scrap() error {
 			fmt.Println("*** Navigate to chart")
 			return nil
 		}),
-		chromedp.Navigate(`https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`),
+		chromedp.Navigate(charturl),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Wait visible")
 			return nil
@@ -81,7 +88,7 @@ func Scrap() error {
 	}
 	log.Println("run scraping terminated ok")
 	//log.Printf("SVG after get:\n%s", example)
-	outfname := "static/data/chart02.svg"
+	outfname := util.GetChartSVGFileName(id)
 	if err = os.WriteFile(outfname, []byte(example), 0644); err != nil {
 		return err
 	}

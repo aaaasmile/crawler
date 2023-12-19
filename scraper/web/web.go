@@ -8,12 +8,13 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/aaaasmile/crawler/scraper/util"
 )
 
 type PageCtx struct {
@@ -22,11 +23,7 @@ type PageCtx struct {
 }
 
 const (
-	buildnr = "00.00.10.00"
-)
-
-const (
-	datadir = "static/data/"
+	buildnr = "00.20231229.11.00"
 )
 
 func handleGetID(w http.ResponseWriter, req *http.Request) error {
@@ -47,8 +44,7 @@ func handleGetID(w http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 	//fmt.Println("**>", match)
-	svg_filename := fmt.Sprintf("chart%02d.svg", num_id)
-	svg_fullfilename := filepath.Join(datadir, svg_filename)
+	svg_fullfilename := util.GetChartSVGFileName(num_id)
 	dat, err := os.ReadFile(svg_fullfilename)
 	if err != nil {
 		return err
