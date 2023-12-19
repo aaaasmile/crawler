@@ -110,6 +110,7 @@ func SaveToPng() error {
 	defer cancel()
 
 	done := make(chan string, 1)
+	cr := make(chan struct{})
 
 	chromedp.ListenTarget(ctx, func(v interface{}) {
 		if ev, ok := v.(*browser.EventDownloadProgress); ok {
@@ -121,6 +122,9 @@ func SaveToPng() error {
 			if ev.State == browser.DownloadProgressStateCompleted {
 				done <- ev.GUID
 				close(done)
+			} else if ev.State == browser.DownloadProgressStateCanceled {
+				cr <- struct{}{}
+				close(cr)
 			}
 		}
 	})
@@ -133,6 +137,8 @@ func SaveToPng() error {
 	if err != nil {
 		return err
 	}
+	//wd = path.Join(wd, "datapng") // download always canceled, why?
+	log.Println("using directory ", wd)
 
 	// navigate to a page, wait for an element, click
 	urlstr := "http://localhost:5903/svg/"
@@ -146,6 +152,7 @@ func SaveToPng() error {
 			fmt.Println("*** Wait visible")
 			return nil
 		}),
+		chromedp.WaitVisible(`#thesvg > svg`),
 		browser.
 			SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
 			WithDownloadPath(wd).
@@ -163,9 +170,24 @@ func SaveToPng() error {
 	}
 	log.Println("save to png started...")
 	// This will block until the chromedp listener closes the channel
-	guid := <-done
-
-	log.Printf("wrote %s", filepath.Join(wd, guid))
+loop:
+	for {
+		select {
+		case guid := <-done:
+			srcpath := filepath.Join(wd, guid)
+			destPath := filepath.Join(wd, "datapng")
+			destPath = filepath.Join(destPath, fmt.Sprintf("%s.png", guid))
+			log.Printf("wrote %s", srcpath)
+			if err := os.Rename(srcpath, destPath); err != nil {
+				return err
+			}
+			log.Println("file moved to ", destPath)
+			break loop
+		case <-cr:
+			log.Println("stop because service shutdown")
+			break loop
+		}
+	}
 
 	return nil
 }

@@ -5,3 +5,4 @@ secret/*.*
 *.db
 sometest/chart.png
 sometest/static/data/*.svg
+sometest/datapng/*.png
