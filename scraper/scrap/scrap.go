@@ -2,7 +2,6 @@ package scrap
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +13,6 @@ import (
 	"github.com/aaaasmile/crawler/scraper/util"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
-	"golang.design/x/clipboard"
 )
 
 const (
@@ -168,17 +166,6 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		_svg_name: util.GetChartSVGFileNameOnly(id),
 	}
 	sc._svgs = append(sc._svgs, scitem)
-	return nil
-}
-
-func EncodeFont() error {
-	dat, err := os.ReadFile("static/css/fonts/DINPro-Regular.woff")
-	if err != nil {
-		return err
-	}
-	encoded := base64.StdEncoding.EncodeToString(dat)
-	clipboard.Write(clipboard.FmtText, []byte(encoded))
-	fmt.Println("base64: ", encoded)
 	return nil
 }
 

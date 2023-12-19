@@ -1,8 +1,10 @@
 data/*.*
 chart-info.db
 crawler.exe
+crawler.bin
 secret/*.*
 *.db
 scraper/chart.png
 scraper/static/data/*.svg
 scraper/datapng/*.png
+scraper/scraper.bin

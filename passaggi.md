@@ -78,8 +78,8 @@ Così ho due exe che vanno in cascata. Il primo scarica i files svg e li convert
 Il secondo programma riceve i dati dei prezzi, aggiunge il file png scaricato del chart ed invia la mail.  
 
 ## TODO
- - vedi di mettere l'immagine svg del chart nella mail. Manca lo scraping partendo dal db.
- - nel download dello scrap, il blocking del download deve avere un timeout. 
+ - vedi di mettere l'immagine svg del chart nella mail. Manca lo scraping partendo dal db. [DONE]
+ - nel download dello scrap, il blocking del download deve avere un timeout. [DONE] 
 
 ## Deployment
 Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
@@ -93,11 +93,12 @@ Per questo ho usato Anacron, che però, mi manda l'email giovedi sera anziché i
 ## Aggiornare il programma
 Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
 poi con WSL:
-ssh igors@pi3.local
-cd /home/igors/projects/go/crawler
-git pull
-go build -o crawler.bin
-(al momento uso il branch easyservice)
+
+    ssh igors@pi3.local
+    cd /home/igors/projects/go/crawler
+    git pull
+    git mod tidy
+    go build -o crawler.bin
 
 Per avere il db in locale dal target:
 rsync -chavzP --stats igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db . 
@@ -105,6 +106,18 @@ Per rimetterlo indietro:
 rsync -chavzP --stats ./chart-info.db igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db
 
 Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
+Ho dovuto fare un aggiornamento di go alla versione 1.21 e qui ho avuto qualche problema.
+La versione da installare è la arm6l e non la arm64. In più ero su un branch che poi ho cancellato in remoto.
+Quando poi ricompilo il programma con go nuovo di pacca, impiega molto tempo perché ricompila con cc sqlite3.
+In più pi3 è molto lento, ma funziona.
+Un altro problema l'ho avuto con x/clipboard, che poi ho tolto per evitare problemi con 
+    
+    #include <X11/Xlib.h>.
+Per verdere la lista dei branch:
+
+    git branch
+    git checkout main
+    git pull
 
 ## Email Relay su invido.it
 Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non ci sono riuscito, vedi passaggi_gmail.md).
