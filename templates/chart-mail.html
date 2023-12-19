@@ -3,11 +3,11 @@ Subject: Chart Depot
 {{end}}
 
 {{define "mailbody" -}}
-<div>Hello Friend,</div>
+<div>Hello my Friend,</div>
 <p>here a little summary of your portfolio.</p>
 
 <div>
-    {{ range .ListOK }}
+    {{- range .ListOK -}}
     <div>{{.SimpleDescr}}</div>
     <div>{{.Description}}</div>
     <div>{{.CurrentPrice}} EUR, previous {{.PreviousPrice}} EUR, diff: {{.DiffPreviousPrice}} %</div>
@@ -17,12 +17,12 @@ Subject: Chart Depot
     <div><a href="{{.ChartURL}}">go to chart</a></div>
     <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
     <hr>
-    {{end}}
+    {{- end}}
 </div>
 
 <p>Under observation:</p>
 <div>
-    {{ range .ListObservation }}
+    {{- range .ListObservation -}}
     <div>{{.SimpleDescr}}</div>
     <div>{{.Description}}</div>
     <div>{{.CurrentPrice}} EUR, previous {{.PreviousPrice}} EUR, diff: {{.DiffPreviousPrice}} %</div>
@@ -32,19 +32,19 @@ Subject: Chart Depot
     <div><a href="{{.ChartURL}}">go to chart</a></div>
     <div><a href="{{.MoreInfoURL}}">go to more ETF info</a></div>
     <hr>
-    {{end}}
+    {{- end}}
 </div>
 
 <div>
-    {{ range .ListErr }}
+    {{- range .ListErr -}}
     <div>{{.ErrorText}}</div>
     <div>{{.Description}}</div>
-    {{end}}
+    {{- end}}
 </div>
 
 
 <p>Enjoy,</p>
-<p>Igor</p>
+<p>aaaasmile</p>
 {{- end}}
 
 {{define "mailPlain" -}}
@@ -55,8 +55,8 @@ here a little summary of your portfolio without images.
 {{.CurrentPrice}}, previous {{.PreviousPrice}}, diff: {{.DiffPreviousPrice}} %
 Value: {{.TotCurrValue}} EUR, Cost: {{.TotCost}} EUR, Quantity: {{.Quantity}}
 W/L: {{.WinOrLoss}} EUR, {{.WinOrLossPerc}} %
-{{end}}
+{{- end}}
 
 Enjoy,
-Igor
+aaaasmile
 {{- end}}

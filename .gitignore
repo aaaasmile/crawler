@@ -3,3 +3,6 @@ chart-info.db
 crawler.exe
 secret/*.*
 *.db
+scraper/chart.png
+scraper/static/data/*.svg
+scraper/datapng/*.png

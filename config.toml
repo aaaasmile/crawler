@@ -5,6 +5,5 @@
 
 DBPath="chart-info.db"
 DebugSQL=true
-ServerURI="https://www.easycharts.at/"
-ServiceAccountFile = "secret/mailcharter-791cb574c2cb.json"
+ServerURI="https://www.easybank.at/"
 

@@ -2,12 +2,10 @@ package crawler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -16,27 +14,28 @@ import (
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/idl"
 	"github.com/aaaasmile/crawler/mail"
+	"github.com/aaaasmile/crawler/scraper/util"
 
 	"github.com/gocolly/colly/v2"
 )
 
 type CrawlerOfChart struct {
-	liteDB            *db.LiteDB
-	list              []*idl.ChartInfo
-	serverURI         string
-	Simulate          bool
-	ResendEmail       bool
-	UseDBToken        bool
-	UseServiceAccount bool
+	liteDB      *db.LiteDB
+	list        []*idl.ChartInfo
+	serverURI   string
+	Simulate    bool
+	ResendEmail bool
 }
 
 type InfoChart struct {
-	Error   error
-	FileDst string
-	Link    string
-	Text    string
-	Alt     string
-	ID      int64
+	Error      error
+	FileDst    string
+	Link       string
+	Text       string
+	Alt        string
+	ID         int64
+	PriceFinal string
+	ClosedAt   string
 }
 
 func (cc *CrawlerOfChart) Start(configfile string) error {
@@ -74,28 +73,40 @@ func (cc *CrawlerOfChart) Start(configfile string) error {
 	return nil
 }
 
+const (
+	datapngdir = "./data/"
+)
+
+func getChartPNGFullFileNameIfExist(id int) string {
+	png_filename := util.GetChartPNGFileNameOnly(id)
+	png_fullfilename := filepath.Join(datapngdir, png_filename)
+	if _, err := os.Stat(png_fullfilename); err != nil {
+		return ""
+	}
+	return png_fullfilename
+}
+
 func (cc *CrawlerOfChart) buildChartListFromLastDown() error {
 	log.Println("Build list from last download")
 
 	cc.list = make([]*idl.ChartInfo, 0)
-	stockList, err := cc.liteDB.FetchStockInfo(100)
+	stockList, err := cc.liteDB.SelectEnabledStockInfos(100)
 	if err != nil {
 		return err
 	}
 	log.Println("Found stocks ", len(stockList))
 	for _, v := range stockList {
 		chartItem := idl.ChartInfo{}
-		fileNameDst := fmt.Sprintf("data/chart_%d.png", v.ID)
 		chartItem.Description = v.Description
 		chartItem.MoreInfoURL = v.MoreInfoURL
 		chartItem.SimpleDescr = v.SimpleDescr
 		chartItem.ChartURL = v.ChartURL
-		chartItem.DownloadFilename = fileNameDst
+		chartItem.DownloadFilename = getChartPNGFullFileNameIfExist(int(v.ID))
 
 		cc.list = append(cc.list, &chartItem)
 	}
 
-	log.Println("Fetchart items", len(cc.list))
+	log.Println("Chart items are", len(cc.list))
 
 	return nil
 }
@@ -104,22 +115,22 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 	log.Println("Build the chart list")
 	start := time.Now()
 	cc.list = make([]*idl.ChartInfo, 0)
-	stockList, err := cc.liteDB.FetchStockInfo(100)
+	stockList, err := cc.liteDB.SelectEnabledStockInfos(100)
 	if err != nil {
 		return err
 	}
-	log.Println("Found stocks ", len(stockList))
+	log.Println("Found stocks in DB ", len(stockList))
 
 	chRes := make(chan *InfoChart)
 	mapStock := make(map[int64]*db.StockInfo)
 	for _, v := range stockList {
 		if mapStock[v.ID] != nil {
-			return fmt.Errorf("Duplicate key %d", v.ID)
+			return fmt.Errorf("duplicate key %d", v.ID)
 		}
 		mapStock[v.ID] = v
 	}
 	for _, v := range stockList {
-		go pickPicture(v.ChartURL, v.ID, cc.serverURI, chRes)
+		go pickChartDetail(v.ChartURL, v.ID, cc.serverURI, chRes)
 	}
 
 	chTimeout := make(chan struct{})
@@ -138,12 +149,12 @@ loop:
 			chartItem := idl.ChartInfo{ColorWL: "green"}
 			chartItem.HasError = res.Error != nil
 			if res.Error != nil {
+				log.Println("chartItem has an error:", res.Error)
 				chartItem.HasError = true
 				chartItem.ErrorText = res.Error.Error()
 			} else {
-				chartItem.DownloadFilename = res.FileDst
-				chartItem.CurrentPrice = res.Alt
-				chartItem.PriceInfo, err = parseForPriceInfo(res.Alt)
+				chartItem.CurrentPrice = res.PriceFinal
+				chartItem.PriceInfo, err = parseForPriceInfo(res.PriceFinal, res.ClosedAt)
 				if err != nil {
 					log.Println("Parse price info error", err)
 					chartItem.HasError = true
@@ -157,6 +168,7 @@ loop:
 				chartItem.SimpleDescr = v.SimpleDescr
 				chartItem.ChartURL = v.ChartURL
 				chartItem.ID = res.ID
+				chartItem.DownloadFilename = getChartPNGFullFileNameIfExist(int(res.ID))
 				if chartItem.PriceInfo != nil {
 					priceCurr := chartItem.PriceInfo.Price
 					totval := priceCurr * v.Quantity
@@ -193,7 +205,7 @@ loop:
 	}
 	t := time.Now()
 	elapsed := t.Sub(start)
-	log.Printf("Fetchart items %d total call duration: %v\n", len(cc.list), elapsed)
+	log.Printf("buildTheChartList: items %d total call duration: %v\n", len(cc.list), elapsed)
 
 	return nil
 }
@@ -214,7 +226,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 			log.Println("WARN: no price info avalible for ", v)
 			continue
 		}
-		pps, err = cc.liteDB.FetchPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
+		pps, err = cc.liteDB.SelectPrice(v.ID, v.PriceInfo.Price, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}
@@ -228,7 +240,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 		} else {
 			log.Println("Price already inserted", v.ID, v.PriceInfo.Price)
 		}
-		pps, err = cc.liteDB.FetchPreviosPriceInStock(v.ID, v.PriceInfo.TimestampInt)
+		pps, err = cc.liteDB.SelectPreviousPriceInStock(v.ID, v.PriceInfo.TimestampInt)
 		if err != nil {
 			return err
 		}
@@ -240,7 +252,7 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 				v.DiffPreviousPrice = (v.PriceInfo.Price - prev.Price) / prev.Price * 100.0
 			}
 		} else if len(pps) > 1 {
-			return fmt.Errorf("Some strange previous %d %v %d", len(pps), pps, v.ID)
+			return fmt.Errorf("some strange previous %d %v %d", len(pps), pps, v.ID)
 		}
 	}
 	if count > 0 {
@@ -250,24 +262,14 @@ func (cc *CrawlerOfChart) insertPriceList() error {
 	return nil
 }
 
-func (cc *CrawlerOfChart) fillWithSomeTesdata() {
-	// example without the crawler
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-	cc.list = append(cc.list, &idl.ChartInfo{Description: "chart 1", DownloadFilename: "data/chart_01.png"})
-}
-
 func (cc *CrawlerOfChart) sendChartEmail() error {
 
 	log.Println("Send email with num of items", len(cc.list))
 
-	mm := mail.NewMailSender(cc.liteDB, conf.Current.ServiceAccount, cc.Simulate)
+	mm := mail.NewMailSender(cc.liteDB, cc.Simulate)
 
 	if err := mm.FetchSecretFromDb(); err != nil {
 		return err
-	}
-	if cc.UseDBToken || cc.UseServiceAccount {
-		return cc.sendMailViaGoogle(mm)
 	}
 	return cc.sendMailViaRelay(mm)
 
@@ -282,54 +284,30 @@ func (cc *CrawlerOfChart) sendMailViaRelay(mm *mail.MailSender) error {
 
 	return nil
 }
-func (cc *CrawlerOfChart) sendMailViaGoogle(mm *mail.MailSender) error {
-	log.Println("Using google services to send the mail")
-	if cc.UseDBToken {
-		if err := mm.AuthGmailServiceWithDBSecret(); err != nil {
-			return err
-		}
-	} else {
-		if err := mm.AuthGmailServiceWithJWT(); err != nil {
-			return err
-		}
-	}
 
-	templFileName := "templates/chart-mail.html"
-	if err := mm.SendEmailViaOAUTH2(templFileName, cc.list); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func pickPicture(URL string, id int64, serverURI string, chItem chan *InfoChart) {
+func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoChart) {
 	log.Println("Fetching chart for ", id, URL)
 	c := colly.NewCollector()
-	found := false
-	// On every a element which has href attribute call callback
-	c.OnHTML("img[src]", func(e *colly.HTMLElement) {
-		link := e.Attr("src")
-		alt := e.Attr("alt")
-		if strings.HasPrefix(link, "getChart") {
-			fileNameDst := fmt.Sprintf("data/chart_%d.png", id)
-			log.Printf("Image found: %q -> %s - alt: %s\n", e.Text, link, alt)
-			item := InfoChart{
-				Alt:     alt, //IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
-				Link:    link,
-				Text:    e.Text,
-				FileDst: fileNameDst,
-				ID:      id,
-			}
-			err := downloadFile(serverURI+item.Link, item.FileDst)
-			if err != nil {
-				log.Println("Downloading image error", err)
-				item.Error = err
-			}
-			found = true
+	sent := false
+	item := InfoChart{
+		ID: id,
+	}
+	// https://github.com/PuerkitoBio/goquery
+	// https://github.com/gocolly/colly/blob/master/_examples
+	c.OnHTML("section.card", func(e *colly.HTMLElement) {
+		// section card has an header and a table as children
+		// identofy both and address the text directly using ChildText selector
+		hh := e.ChildText("header > h2")
+		if strings.HasPrefix(hh, "Basisinformationen") {
+			//fmt.Println("*** H ", hh)
+			psfinlbl := e.ChildText("table > tbody > tr:nth-child(2) > td:nth-child(1)")
+			psfinval := e.ChildText("table > tbody > tr:nth-child(2) > td:nth-child(2)")
+			//fmt.Println("***  ", psfinlbl, psfinval)
+			item.PriceFinal = psfinval
+			item.ClosedAt = psfinlbl
+			sent = true
 			chItem <- &item
 		}
-		//fmt.Println("*** link image", link, alt)
-		//something like: *** link image getChart.asp?action=getChart&chartID=71C233968F97F40CD296DA8A36E792DF6A50394A IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
 	})
 
 	c.OnRequest(func(r *colly.Request) {
@@ -337,110 +315,53 @@ func pickPicture(URL string, id int64, serverURI string, chItem chan *InfoChart)
 	})
 	c.OnError(func(e *colly.Response, err error) {
 		log.Println("Error on scrap", err)
-		if !found {
+		if !sent {
 			log.Println("Chart image error")
-			item := InfoChart{
-				Error: err,
-				ID:    id,
-			}
+			item.Error = err
 			chItem <- &item
+			sent = true
 		}
 	})
 	c.Visit(URL)
 
 	log.Println("Terminate request")
-	if !found {
-		log.Println("Chart image not recognized")
-		item := InfoChart{
-			Error: fmt.Errorf("Chart not recognized on %s", URL),
-			ID:    id,
-		}
+	if !sent {
+		log.Println("Chart not found")
+		item.Error = fmt.Errorf("chart not recognized (service html layout changed?) on %s", URL)
 		chItem <- &item
 	}
-
 }
 
-func downloadFile(URL, fileName string) error {
-	//Get the response bytes from the url
-	log.Println("Downloading the URL to the filename: ", fileName)
-	response, err := http.Get(URL)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		return errors.New("Received non 200 response code")
-	}
-	//Create a empty file
-	file, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	//Write the bytes to the fiel
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
-	time.Sleep(200)
-	return nil
-}
-
-func parseForPriceInfo(alt string) (*db.Price, error) {
-	// alt is something like: IS.EO ST.SEL.DIV.30 U.ETF - Aktuell: 16,34 (15.01. / 17:36)
-	arr := strings.Split(alt, "-")
+func parseForPriceInfo(pricestr string, closed string) (*db.Price, error) {
+	// price is something like: 16,34
+	// closed is like: Schluss 15.01.23
+	arr := strings.Split(closed, " ")
 	if len(arr) < 2 {
-		return nil, fmt.Errorf("Expect at least one dash")
+		return nil, fmt.Errorf("expect at least one space")
 	}
-	item := arr[len(arr)-1]
-	arr = strings.Split(item, ":")
-	if len(arr) != 3 {
-		return nil, fmt.Errorf("Expect 2 ':'")
-	}
-	item = strings.Join(arr[1:], ":")
-	item = strings.Trim(item, " ") //16,34 (15.01. / 17:36)
 
-	arr = strings.Split(item, " ")
-	if len(arr) < 1 {
-		return nil, fmt.Errorf("Expect date and time with space separation")
-	}
-	pricestr := arr[0] //16,34
 	pricestr = strings.Replace(pricestr, ",", ".", 1)
 	price, err := strconv.ParseFloat(pricestr, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	datestr := strings.Join(arr[1:], " ")
-	datestr = strings.Trim(datestr, "(")
-	datestr = strings.Trim(datestr, ")") //15.01. / 17:36
-	arr = strings.Split(datestr, "/")
-	if len(arr) != 2 {
-		return nil, fmt.Errorf("Expected one / separator")
-	}
-	datestr = arr[0] //15.01.
+	datestr := arr[1]
 	pparr := strings.Split(datestr, ".")
 	if len(pparr) != 3 {
-		return nil, fmt.Errorf("Expected 3 date field separated with dot")
+		return nil, fmt.Errorf("expected 3 date field separated with dot")
 	}
 	dd := strings.Trim(pparr[0], " ")
 	mm := strings.Trim(pparr[1], " ")
 	yy := strings.Trim(pparr[2], " ")
 	if yy == "" {
 		yy = fmt.Sprintf("%d", time.Now().Year())
+	} else if len(yy) == 2 {
+		yy = fmt.Sprintf("20%s", yy)
 	}
 
-	timestr := arr[1] // 17:36
-	timestr = strings.Trim(timestr, " ")
-	pptimearr := strings.Split(timestr, ":")
-	if len(pptimearr) != 2 {
-		return nil, fmt.Errorf("Expected hour and minute separated with ':'")
-	}
-	hh := pptimearr[0]
-	min := pptimearr[1]
-
+	hh := "17" // use a fixed closed time because it is not provided anymore
+	min := "36"
 	timeforparse := fmt.Sprintf("%s-%s-%sT%s:%s:00+00:00", yy, mm, dd, hh, min)
 	//fmt.Println("** Time for parse is ", timeforparse)
 	tt, err := time.Parse(time.RFC3339, timeforparse)
