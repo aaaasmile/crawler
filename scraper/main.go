@@ -22,7 +22,7 @@ func main() {
 		msgch <- "OK"
 	}()
 
-	log.Println("Testing svg scraping and conversion")
+	log.Println("Svg scraping and Png conversion")
 	sc := scrap.Scrap{}
 	if !*skipscrap {
 		if err := sc.Scrap(); err != nil {
@@ -43,5 +43,6 @@ func main() {
 	}
 
 	msg := <-msgch
+	log.Println("processed files: ", sc.ReportProcessed())
 	log.Println("terminate with: ", msg)
 }

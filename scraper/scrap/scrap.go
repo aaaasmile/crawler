@@ -33,19 +33,20 @@ type ScrapItem struct {
 	_svg_name string
 	_png_path string
 	_png_name string
+	_err      error
 }
 
 type Scrap struct {
-	_svgs []ScrapItem
+	_svgs []*ScrapItem
 }
 
 func (sc *Scrap) Scrap() error {
-	sc._svgs = []ScrapItem{}
+	sc._svgs = []*ScrapItem{}
 
 	charturl := `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
 	err := sc.scrapItem(charturl, 1)
 	if err != nil {
-		return err
+		log.Println("error on scraping ", charturl) // continue scraping ignoring wrong items
 	}
 	return nil
 }
@@ -54,14 +55,27 @@ func (sc *Scrap) SaveToPng() error {
 	if len(sc._svgs) == 0 {
 		return fmt.Errorf("no svg provided")
 	}
+	aa := []*ScrapItem{}
 	for _, item := range sc._svgs {
-		sc.saveToPngItem(&item)
+		if item._err == nil {
+			moditem, err := sc.saveToPngItem(item)
+			if err != nil {
+				log.Println("error on save to png ", err) // continue save ignoring wrong items
+				aa = append(aa, item)
+			} else {
+				aa = append(aa, moditem)
+			}
+		} else {
+			aa = append(aa, item)
+		}
 	}
+	sc._svgs = aa
 	return nil
 }
 
 func (sc *Scrap) PrepareTestSVG() {
-	sc._svgs = []ScrapItem{{_id: 1, _svg_name: "chart01.svg", _svg_path: "static/data/chart01.svg"}}
+	// some test files
+	sc._svgs = []*ScrapItem{{_id: 1, _svg_name: "chart01.svg", _svg_path: "static/data/chart01.svg"}}
 	fmt.Println("using some test data ", sc._svgs)
 }
 
@@ -117,17 +131,19 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			chromedp.NodeVisible),
 	)
 	if err != nil {
+		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
 		return err
 	}
 	log.Println("run scraping terminated ok")
 	//log.Printf("SVG after get:\n%s", example)
 	outfname := util.GetChartSVGFullFileName(id)
 	if err = os.WriteFile(outfname, []byte(example), 0644); err != nil {
+		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
 		return err
 	}
 
 	log.Println("svg file written ", outfname)
-	scitem := ScrapItem{
+	scitem := &ScrapItem{
 		_id:       id,
 		_svg_path: outfname,
 		_svg_name: util.GetChartSVGFileNameOnly(id),
@@ -147,11 +163,10 @@ func EncodeFont() error {
 	return nil
 }
 
-func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) error {
+func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) (*ScrapItem, error) {
 	// reference: https://github.com/chromedp/examples/blob/master/download_file/main.go
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
-		// chromedp.WithDebugf(log.Printf),
 	)
 	defer cancel()
 
@@ -181,13 +196,13 @@ func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) error {
 	var err error
 	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	//wd = path.Join(wd, "datapng") // download always canceled, why?
-	log.Println("using directory ", wd)
 
+	log.Println("using directory ", wd) // the best way
 	// navigate to a page, wait for an element, click
 	urlstr := fmt.Sprintf("%s%d", service_svgtopng, scrapItem._id)
+	log.Println("using the service ", urlstr)
 	if err = chromedp.Run(ctx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to svg converter")
@@ -212,7 +227,7 @@ func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) error {
 		// Note: Ignoring the net::ERR_ABORTED page error is essential here
 		// since downloads will cause this error to be emitted, although the
 		// download will still succeed.
-		return err
+		return nil, err
 	}
 	log.Println("save to png started...", scrapItem._id)
 	// This will block until the chromedp listener closes the channel
@@ -224,7 +239,7 @@ loop:
 			destPath := util.GetChartPNGFullFileName(scrapItem._id)
 			log.Printf("wrote %s", srcpath)
 			if err := os.Rename(srcpath, destPath); err != nil {
-				return err
+				return nil, err
 			}
 			log.Println("source file moved to ", destPath)
 			scrapItem._png_name = util.GetChartPNGFileNameOnly(scrapItem._id)
@@ -236,5 +251,27 @@ loop:
 		}
 	}
 
-	return nil
+	return scrapItem, nil
+}
+
+func (sc *Scrap) ReportProcessed() string {
+	svg_count := 0
+	png_count := 0
+	err_on_svg := 0
+	for _, item := range sc._svgs {
+		if item._err != nil {
+			err_on_svg += 1
+			continue
+		}
+		if item._svg_name != "" {
+			svg_count += 1
+			continue
+		}
+		if item._png_name != "" {
+			png_count += 1
+		}
+	}
+	err_on_png := svg_count - png_count
+	return fmt.Sprintf("processed %d, svg %d, png %d, png errors %d, svg errors %d",
+		len(sc._svgs), svg_count, png_count, err_on_png, err_on_svg)
 }
