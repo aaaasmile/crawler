@@ -23,15 +23,17 @@ func main() {
 	}()
 
 	log.Println("Testing svg scraping and conversion")
+	sc := scrap.Scrap{}
 	if !*skipscrap {
-		if err := scrap.Scrap(); err != nil {
+		if err := sc.Scrap(); err != nil {
 			log.Fatal("Scraping error ", err)
 		}
 	} else {
 		log.Println("[WARN] scrap skipped")
+		sc.PrepareTestSVG()
 	}
 	if !*skipsave {
-		if err := scrap.SaveToPng(); err != nil {
+		if err := sc.SaveToPng(); err != nil {
 			log.Println("[ERR] error on save png ", err)
 		}
 	}

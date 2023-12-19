@@ -23,16 +23,49 @@ const (
 	sel_spinner = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
 )
 
-func Scrap() error {
+const (
+	service_svgtopng = "http://localhost:5903/svg/"
+)
+
+type ScrapItem struct {
+	_id       int
+	_svg_path string
+	_svg_name string
+	_png_path string
+	_png_name string
+}
+
+type Scrap struct {
+	_svgs []ScrapItem
+}
+
+func (sc *Scrap) Scrap() error {
+	sc._svgs = []ScrapItem{}
+
 	charturl := `https://www.easybank.at/markets/etf/tts-23270949/XTR-FTSE-DEV-EUR-R-EST-1C`
-	err := scrapItem(charturl, 1)
+	err := sc.scrapItem(charturl, 1)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func scrapItem(charturl string, id int) error {
+func (sc *Scrap) SaveToPng() error {
+	if len(sc._svgs) == 0 {
+		return fmt.Errorf("no svg provided")
+	}
+	for _, item := range sc._svgs {
+		sc.saveToPngItem(&item)
+	}
+	return nil
+}
+
+func (sc *Scrap) PrepareTestSVG() {
+	sc._svgs = []ScrapItem{{_id: 1, _svg_name: "chart01.svg", _svg_path: "static/data/chart01.svg"}}
+	fmt.Println("using some test data ", sc._svgs)
+}
+
+func (sc *Scrap) scrapItem(charturl string, id int) error {
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
 	)
@@ -88,12 +121,18 @@ func scrapItem(charturl string, id int) error {
 	}
 	log.Println("run scraping terminated ok")
 	//log.Printf("SVG after get:\n%s", example)
-	outfname := util.GetChartSVGFileName(id)
+	outfname := util.GetChartSVGFullFileName(id)
 	if err = os.WriteFile(outfname, []byte(example), 0644); err != nil {
 		return err
 	}
 
 	log.Println("svg file written ", outfname)
+	scitem := ScrapItem{
+		_id:       id,
+		_svg_path: outfname,
+		_svg_name: util.GetChartSVGFileNameOnly(id),
+	}
+	sc._svgs = append(sc._svgs, scitem)
 	return nil
 }
 
@@ -108,7 +147,7 @@ func EncodeFont() error {
 	return nil
 }
 
-func SaveToPng() error {
+func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) error {
 	// reference: https://github.com/chromedp/examples/blob/master/download_file/main.go
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
@@ -148,7 +187,7 @@ func SaveToPng() error {
 	log.Println("using directory ", wd)
 
 	// navigate to a page, wait for an element, click
-	urlstr := "http://localhost:5903/svg/"
+	urlstr := fmt.Sprintf("%s%d", service_svgtopng, scrapItem._id)
 	if err = chromedp.Run(ctx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to svg converter")
@@ -175,20 +214,21 @@ func SaveToPng() error {
 		// download will still succeed.
 		return err
 	}
-	log.Println("save to png started...")
+	log.Println("save to png started...", scrapItem._id)
 	// This will block until the chromedp listener closes the channel
 loop:
 	for {
 		select {
 		case guid := <-done:
 			srcpath := filepath.Join(wd, guid)
-			destPath := filepath.Join(wd, "datapng")
-			destPath = filepath.Join(destPath, fmt.Sprintf("%s.png", guid))
+			destPath := util.GetChartPNGFullFileName(scrapItem._id)
 			log.Printf("wrote %s", srcpath)
 			if err := os.Rename(srcpath, destPath); err != nil {
 				return err
 			}
-			log.Println("file moved to ", destPath)
+			log.Println("source file moved to ", destPath)
+			scrapItem._png_name = util.GetChartPNGFileNameOnly(scrapItem._id)
+			scrapItem._png_path = destPath
 			break loop
 		case <-cr:
 			log.Println("stop because service shutdown")

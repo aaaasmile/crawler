@@ -44,7 +44,7 @@ func handleGetID(w http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 	//fmt.Println("**>", match)
-	svg_fullfilename := util.GetChartSVGFileName(num_id)
+	svg_fullfilename := util.GetChartSVGFullFileName(num_id)
 	dat, err := os.ReadFile(svg_fullfilename)
 	if err != nil {
 		return err
