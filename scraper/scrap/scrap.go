@@ -76,7 +76,7 @@ func (sc *Scrap) SaveToPng() error {
 func (sc *Scrap) PrepareTestSVG() {
 	// some test files
 	sc._svgs = []*ScrapItem{{_id: 1, _svg_name: "chart01.svg", _svg_path: "static/data/chart01.svg"}}
-	fmt.Println("using some test data ", sc._svgs)
+	fmt.Println("using some test data ", sc._svgs[0])
 }
 
 func (sc *Scrap) scrapItem(charturl string, id int) error {
@@ -234,6 +234,7 @@ func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) (*ScrapItem, error) {
 loop:
 	for {
 		select {
+		// TODO timeout
 		case guid := <-done:
 			srcpath := filepath.Join(wd, guid)
 			destPath := util.GetChartPNGFullFileName(scrapItem._id)
@@ -250,7 +251,7 @@ loop:
 			break loop
 		}
 	}
-
+	//fmt.Println("*** png scrapItem ", scrapItem)
 	return scrapItem, nil
 }
 
@@ -265,11 +266,11 @@ func (sc *Scrap) ReportProcessed() string {
 		}
 		if item._svg_name != "" {
 			svg_count += 1
-			continue
 		}
 		if item._png_name != "" {
 			png_count += 1
 		}
+		//fmt.Println("*** item ", *item)
 	}
 	err_on_png := svg_count - png_count
 	return fmt.Sprintf("processed %d, svg %d, png %d, png errors %d, svg errors %d",
