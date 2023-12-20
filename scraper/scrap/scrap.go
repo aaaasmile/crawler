@@ -107,7 +107,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 
 	// navigate to a page, wait for an element, click
