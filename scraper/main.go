@@ -15,6 +15,7 @@ func main() {
 	var noautofinish = flag.Bool("noautofinish", false, "avoid termination when all scraps anconversions are finished (to inspect the web server)")
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
 	var dbpath = flag.String("dbpath", "../chart-info.db", "path to the db")
+	var limit = flag.Int("limit", -1, "limit the scraping file, (-1 is all)")
 	flag.Parse()
 	stopch := make(chan struct{})
 	msgch := make(chan string)
@@ -28,7 +29,7 @@ func main() {
 	log.Println("Svg scraping and Png conversion")
 	sc := scrap.Scrap{}
 	if !*skipscrap {
-		if err := sc.Scrap(*dbpath); err != nil {
+		if err := sc.Scrap(*dbpath, *limit); err != nil {
 			log.Fatal("Scraping error ", err)
 		}
 	} else {

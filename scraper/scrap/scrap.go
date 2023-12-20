@@ -40,7 +40,7 @@ type Scrap struct {
 	_svgs  []*ScrapItem
 }
 
-func (sc *Scrap) Scrap(dbPath string) error {
+func (sc *Scrap) Scrap(dbPath string, limit int) error {
 	if err := util.CleanSVGPNGData(); err != nil {
 		return err
 	}
@@ -52,8 +52,13 @@ func (sc *Scrap) Scrap(dbPath string) error {
 		return err
 	}
 	var err error
+	upperlimit := 100
+	if limit != -1 {
+		fmt.Println("Limit scrap to file num: ", limit)
+		upperlimit = limit
+	}
 	sc._svgs = []*ScrapItem{}
-	stockList, err := sc.liteDB.SelectEnabledStockInfos(100)
+	stockList, err := sc.liteDB.SelectEnabledStockInfos(upperlimit)
 	if err != nil {
 		return err
 	}
@@ -123,12 +128,15 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** initial spinner invisible")
+			time.Sleep(500 * time.Millisecond)
 			return nil
 		}),
 		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
 		chromedp.Click(sel_6month, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Click month done")
+			log.Println("sleep after click ")
+			time.Sleep(2 * time.Second)
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
