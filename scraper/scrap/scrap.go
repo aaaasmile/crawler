@@ -119,7 +119,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		}),
 		chromedp.Navigate(charturl),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			time.Sleep(2 * time.Second)
+			//time.Sleep(2 * time.Second)
 			fmt.Println("*** Wait visible")
 			return nil
 		}),
@@ -129,15 +129,15 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** initial spinner invisible")
-			time.Sleep(2 * time.Second)
+			//time.Sleep(2 * time.Second)
 			return nil
 		}),
 		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
-		chromedp.Click(sel_6month, chromedp.NodeVisible),
+		chromedp.Click(sel_6month, chromedp.NodeReady),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Click month done")
 			log.Println("sleep after click ")
-			time.Sleep(4 * time.Second)
+			//time.Sleep(4 * time.Second)
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
