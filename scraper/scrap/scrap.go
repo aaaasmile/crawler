@@ -139,10 +139,15 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			time.Sleep(2 * time.Second)
 			return nil
 		}),
+		chromedp.Click(sel_6month, chromedp.NodeVisible),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** repeat Click ")
+			return nil
+		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
-			log.Println("sleep some seconds...")
+			log.Println("sleep after svg container...")
 			time.Sleep(2 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
 			return nil
 		}),
