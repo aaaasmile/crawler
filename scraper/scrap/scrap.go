@@ -119,6 +119,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		}),
 		chromedp.Navigate(charturl),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			time.Sleep(2 * time.Second)
 			fmt.Println("*** Wait visible")
 			return nil
 		}),
@@ -128,7 +129,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** initial spinner invisible")
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(2 * time.Second)
 			return nil
 		}),
 		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
@@ -139,15 +140,11 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			time.Sleep(4 * time.Second)
 			return nil
 		}),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** repeat Click ")
-			return nil
-		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
 			log.Println("sleep after svg container...")
-			time.Sleep(15 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
+			time.Sleep(2 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
 			return nil
 		}),
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
