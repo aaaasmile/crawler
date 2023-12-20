@@ -136,10 +136,9 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Click month done")
 			log.Println("sleep after click ")
-			time.Sleep(2 * time.Second)
+			time.Sleep(4 * time.Second)
 			return nil
 		}),
-		chromedp.Click(`body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** repeat Click ")
 			return nil
@@ -148,7 +147,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
 			log.Println("sleep after svg container...")
-			time.Sleep(5 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
+			time.Sleep(15 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
 			return nil
 		}),
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
