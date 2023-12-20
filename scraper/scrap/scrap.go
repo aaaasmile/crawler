@@ -139,7 +139,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			time.Sleep(2 * time.Second)
 			return nil
 		}),
-		chromedp.Click(sel_6month, chromedp.NodeVisible),
+		chromedp.Click(`body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** repeat Click ")
 			return nil
