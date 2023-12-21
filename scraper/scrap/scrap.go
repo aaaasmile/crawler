@@ -133,29 +133,24 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			return nil
 		}),
 		chromedp.Navigate(charturl),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			//time.Sleep(2 * time.Second)
-			fmt.Println("*** Wait visible")
-			return nil
-		}),
 		// wait for footer element is visible (ie, page is loaded)
 		chromedp.WaitVisible(`body > footer`),
 		// dafault chart is intraday, not interesting for me
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** initial spinner invisible")
-			//time.Sleep(2 * time.Second)
 			return nil
 		}),
-		//chromedp.Click(`#onetrust-banner-sdk`),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			if sc._cookies {
+				// click cookies with abs x,y click. Which selector works? Tried somes but without success
 				log.Println("Expect coockies, try to click away")
 				chromedp.WaitReady(`#onetrust-policy-text > div > a`, chromedp.NodeVisible).Do(ctx)
-				chromedp.MouseClickXY(960, 750).Do(ctx) // click cookies with abs x,y. Which selector works?
-				time.Sleep(2 * time.Second)
+				chromedp.MouseClickXY(960, 750).Do(ctx)
+				//time.Sleep(2 * time.Second)
+				chromedp.WaitReady(`#onetrust-policy-text > div > a`, chromedp.NodeNotVisible).Do(ctx)
+				fmt.Println("*** cookies hidden")
 			}
-			fmt.Println("*** policy visible")
 			return nil
 		}),
 
@@ -175,7 +170,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		// 	return nil
 		// }),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Click month done")
+			fmt.Println("*** Click 6-month done")
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
