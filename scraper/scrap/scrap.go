@@ -37,9 +37,17 @@ type ScrapItem struct {
 }
 
 type Scrap struct {
-	liteDB         *db.LiteDB
-	_svgs          []*ScrapItem
-	TakeScreenshot bool
+	liteDB          *db.LiteDB
+	_svgs           []*ScrapItem
+	_takeScreenshot bool
+	_cookies        bool
+}
+
+func NewScrap(takescreen, cookies bool) *Scrap {
+	return &Scrap{
+		_takeScreenshot: takescreen,
+		_cookies:        cookies,
+	}
 }
 
 func (sc *Scrap) Scrap(dbPath string, limit int) error {
@@ -112,14 +120,14 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 20*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	var screenbuf []byte
 
 	// navigate to a page, wait for an element, click
 	var example string
 	err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(1024, 800), // for cookies visibility
+		chromedp.EmulateViewport(1920, 1080), // for cookies visibility
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to chart")
 			return nil
@@ -139,29 +147,35 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			//time.Sleep(2 * time.Second)
 			return nil
 		}),
+		//chromedp.Click(`#onetrust-banner-sdk`),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			if sc._cookies {
+				log.Println("Expect coockies, try to click away")
+				chromedp.WaitReady(`#onetrust-policy-text > div > a`, chromedp.NodeVisible).Do(ctx)
+				chromedp.MouseClickXY(960, 750).Do(ctx) // click cookies with abs x,y. Which selector works?
+				time.Sleep(2 * time.Second)
+			}
+			fmt.Println("*** policy visible")
+			return nil
+		}),
+
+		//chromedp.DoubleClick(`#onetrust-policy-text > div > ul`, chromedp.NodeReady),
 		chromedp.Click(sel_6month, chromedp.NodeVisible),
 		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
 		// coockies popup
 		//chromedp.ScrollIntoView(`#onetrust-group-container`, chromedp.NodeReady),
-		chromedp.Click(`#onetrust-policy-text > div > ul > li:nth-child(3)`, chromedp.NodeVisible),
+		// chromedp.Click(`#onetrust-policy-text > div > ul > li:nth-child(3)`, chromedp.NodeVisible),
+		// chromedp.ActionFunc(func(ctx context.Context) error {
+		// 	log.Println("popup clicked")
+		// 	return nil
+		// }),
+		//chromedp.Click(`#onetrust-pc-btn-handler`, chromedp.NodeVisible),
+		// chromedp.ActionFunc(func(ctx context.Context) error {
+		// 	log.Println("coockies clicked away")
+		// 	return nil
+		// }),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			log.Println("popup clicked")
-			return nil
-		}),
-		chromedp.Click(`#onetrust-pc-btn-handler`, chromedp.NodeVisible),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			log.Println("coockies clicked away")
-			return nil
-		}),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			if sc.TakeScreenshot {
-				log.Println("Take a small screenshot")
-				act := chromedp.CaptureScreenshot(&screenbuf)
-				act.Do(ctx)
-			}
 			fmt.Println("*** Click month done")
-			log.Println("sleep after click ")
-			//time.Sleep(4 * time.Second)
 			return nil
 		}),
 		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
@@ -174,6 +188,15 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** spinner invisible")
+			if sc._takeScreenshot {
+				log.Println("Take a small screenshot")
+				act := chromedp.CaptureScreenshot(&screenbuf)
+				act.Do(ctx)
+				if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
+					return err
+				}
+				log.Println("Screenshot saved ok")
+			}
 			return nil
 		}),
 		chromedp.InnerHTML(sel_svgnode, // finally get the chart
@@ -193,12 +216,12 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	}
 
 	log.Println("svg file written ", outfname)
-	if sc.TakeScreenshot {
-		if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
-			return err
-		}
-		log.Println("Screenshot saved ok")
-	}
+	// if sc._takeScreenshot {
+	// 	if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
+	// 		return err
+	// 	}
+	// 	log.Println("Screenshot saved ok")
+	// }
 	scitem := &ScrapItem{
 		_id:       id,
 		_svg_path: outfname,
