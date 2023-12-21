@@ -16,6 +16,7 @@ func main() {
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
 	var dbpath = flag.String("dbpath", "../chart-info.db", "path to the db")
 	var limit = flag.Int("limit", -1, "limit the scraping file, (-1 is all)")
+	var screenshot = flag.Bool("screenshot", false, "take a screenshot of the chart page")
 	flag.Parse()
 	stopch := make(chan struct{})
 	msgch := make(chan string)
@@ -27,7 +28,9 @@ func main() {
 	}()
 
 	log.Println("Svg scraping and Png conversion")
-	sc := scrap.Scrap{}
+	sc := scrap.Scrap{
+		TakeScreenshot: *screenshot,
+	}
 	if !*skipscrap {
 		if err := sc.Scrap(*dbpath, *limit); err != nil {
 			log.Fatal("Scraping error ", err)

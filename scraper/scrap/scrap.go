@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	sel_1month  = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`
-	sel_6month  = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
-	sel_svgnode = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
-	sel_spinner = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
+	sel_1month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`
+	sel_6month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
+	sel_svgnode      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
+	sel_spinner      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
+	coockie_selector = `#onetrust-accept-btn-handler`
 )
 
 const (
@@ -36,8 +37,9 @@ type ScrapItem struct {
 }
 
 type Scrap struct {
-	liteDB *db.LiteDB
-	_svgs  []*ScrapItem
+	liteDB         *db.LiteDB
+	_svgs          []*ScrapItem
+	TakeScreenshot bool
 }
 
 func (sc *Scrap) Scrap(dbPath string, limit int) error {
@@ -104,15 +106,20 @@ func (sc *Scrap) PrepareTestSVG() {
 func (sc *Scrap) scrapItem(charturl string, id int) error {
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
+		// chromedp.WithDebugf(func(s string, i ...interface{}) {
+		// 	fmt.Printf(s, i...)
+		// }),
 	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 45*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
+	var screenbuf []byte
 
 	// navigate to a page, wait for an element, click
 	var example string
 	err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1024, 800), // for cookies visibility
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to chart")
 			return nil
@@ -132,9 +139,26 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			//time.Sleep(2 * time.Second)
 			return nil
 		}),
+		chromedp.Click(sel_6month, chromedp.NodeVisible),
 		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
-		chromedp.Click(sel_6month, chromedp.NodeReady),
+		// coockies popup
+		//chromedp.ScrollIntoView(`#onetrust-group-container`, chromedp.NodeReady),
+		chromedp.Click(`#onetrust-policy-text > div > ul > li:nth-child(3)`, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			log.Println("popup clicked")
+			return nil
+		}),
+		chromedp.Click(`#onetrust-pc-btn-handler`, chromedp.NodeVisible),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			log.Println("coockies clicked away")
+			return nil
+		}),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			if sc.TakeScreenshot {
+				log.Println("Take a small screenshot")
+				act := chromedp.CaptureScreenshot(&screenbuf)
+				act.Do(ctx)
+			}
 			fmt.Println("*** Click month done")
 			log.Println("sleep after click ")
 			//time.Sleep(4 * time.Second)
@@ -169,6 +193,12 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	}
 
 	log.Println("svg file written ", outfname)
+	if sc.TakeScreenshot {
+		if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
+			return err
+		}
+		log.Println("Screenshot saved ok")
+	}
 	scitem := &ScrapItem{
 		_id:       id,
 		_svg_path: outfname,
