@@ -15,7 +15,7 @@ func main() {
 	var noautofinish = flag.Bool("noautofinish", false, "avoid termination when all scraps anconversions are finished (to inspect the web server)")
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
 	var dbpath = flag.String("dbpath", "../chart-info.db", "path to the db")
-	var limit = flag.Int("limit", 1, "limit the scraping file, (-1 is all)")
+	var limit = flag.Int("limit", -1, "limit the scraping file, (-1 is all)")
 	var screenshot = flag.Bool("screenshot", false, "take a screenshot of the chart page")
 	var coockies = flag.Bool("cookies", true, "expect cookies to click away")
 	flag.Parse()
