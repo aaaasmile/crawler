@@ -81,7 +81,63 @@ Il secondo programma riceve i dati dei prezzi, aggiunge il file png scaricato de
  - vedi di mettere l'immagine svg del chart nella mail. Manca lo scraping partendo dal db. [DONE]
  - nel download dello scrap, il blocking del download deve avere un timeout. [DONE] 
 
-## Deployment
+## Deployment su invido
+Ho fatto il deployment sul server dell'invido, dove ho aggiornato golang ed ho installato
+google-chrome. Per aggiornare golang ho seguito le istruzioni della homepage di golang,
+dove ho scaricato il tar, cancellata la distribuzione corrente in /usr/local/go e
+scompattao il tar nel /usr/local/go (vedi anche le istruzioni del raspberry).
+Qui ho avuto un problema col click del cambio scala del grafico (6 mesi). La ragione è dovuta
+al popup dei cookies, che mi compare solo su alcune distribuzioni di WSL e invido, ma non su Windows.
+Lo screenshot del contenuto del chart mi ha mostrato il problema. Il selector dei pulsanti
+dei cookies non ha funzionato, per cui ho usato un click con coordinate assolute sulla view 1920x1080.
+Per lo sviluppo su invido ho usato Code in collegamento ssh 
+(per la connessione si clicca in basso a sinistra) che è molto utile. 
+
+### Autostart
+Ho usato crontab -e con queste due lineee
+
+    28 18 * * 5 cd /home/igor/app/go/crawler/scraper && ./scraper.bin > /tmp/scraper.log
+    45 18 * * 5 cd /home/igor/app/go/crawler && ./crawler.bin > /tmp/crawler.log
+
+## Scraper su Ubuntu di invido
+Ho dovuto installare google-chrome in quanto ho ricevuto il seguente errore:
+ 
+    "google-chrome": executable file not found in $PATH
+Ho installato google-chrome con la seguente sequenza:
+
+    cd tmp
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
+    sudo apt-get --fix-broken install
+
+Qui https://github.com/geziyor/geziyor/issues/27 viene spiegato il problema.
+Un altro link utile è: https://github.com/Zenika/alpine-chrome
+Il prompt che ottengo:
+
+    google-chrome --version
+    Google Chrome 120.0.6099.109
+
+## Email Relay su invido
+Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non ci sono riuscito, vedi passaggi_gmail.md).
+Per vedere come si manda la mail vedi  
+D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
+
+Mandare le mail con il relay ha avuto delle trappole, tipo la codifica
+delle apici da parte del server gmx. Questo ha distrutto in gran parte 
+il formato html della mail.  
+L'ho risolto codificando il contenuto della mail html in formato rfcbase64.
+Da notare che la codifica di tutto il messaggio non funziona, ma si possono 
+codificare solo le sezioni.
+
+Nota che per usare il relay di invido, le credential sono nel db. Secret File json 
+viene usato solo per google.
+
+
+## Sezione Obsoleta pi3 hole
+Non utilizzo più pi3 a malinquore, ma il fatto di dover usare ora chrome-headless
+mi ha fatto abbandonare l'idea.
+
+## Deployment (obsoleto)
 Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
 Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
 28 18 * * 5  cd /home/igors/projects/go/crawler && ./crawler.bin > /tmp/crawler.log
@@ -119,36 +175,4 @@ Per verdere la lista dei branch:
     git checkout main
     git pull
 
-## Scraper su Ubuntu (deployment corrente)
-Ho dovuto installare google-chrome in quanto ho ricevuto il seguente errore:
- 
-    "google-chrome": executable file not found in $PATH
-Ho installato google-chrome con la seguente sequenza:
-
-    cd tmp
-    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    sudo dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
-    sudo apt-get --fix-broken install
-
-Qui https://github.com/geziyor/geziyor/issues/27 viene spiegato il problema.
-Un altro link utile è: https://github.com/Zenika/alpine-chrome
-Il prompt che ottengo:
-
-    google-chrome --version
-    Google Chrome 120.0.6099.109
-
-## Email Relay su invido.it
-Ho settato un service smtp di relay (https://github.com/aaaasmile/mailrelay-invido) che non è affatto male in quanto usa un account come gmx molto affidabile per l'invio delle mail usando tls (con gmail non ci sono riuscito, vedi passaggi_gmail.md).
-Per vedere come si manda la mail vedi  
-D:\scratch\go-lang\mail-relay\ref\smtpd-master\client\client_example.go
-
-Mandare le mail con il relay ha avuto delle trappole, tipo la codifica
-delle apici da parte del server gmx. Questo ha distrutto in gran parte 
-il formato html della mail.  
-L'ho risolto codificando il contenuto della mail html in formato rfcbase64.
-Da notare che la codifica di tutto il messaggio non funziona, ma si possono 
-codificare solo le sezioni.
-
-Nota che per usare il relay di invido, le credential sono nel db. Secret File json 
-viene usato solo per google.
 
