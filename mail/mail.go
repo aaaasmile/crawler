@@ -132,7 +132,7 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 	imgBuf := &bytes.Buffer{}
 	for _, v := range listsrc {
 		if v.HasError || v.ErrorText != "" {
-			log.Println("Wrong img: ", v)
+			log.Println("[WARN] Wrong img: ", v)
 			listErr = append(listErr, v)
 			continue
 		}
@@ -148,6 +148,7 @@ func (ms *MailSender) buildEmailMsg(templFileName string, listsrc []*idl.ChartIn
 				insert = true
 			}
 		} else {
+			log.Println("[WARN] image not found for ", v.ID, v.SimpleDescr)
 			insert = true
 		}
 		if insert {
