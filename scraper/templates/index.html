@@ -12,7 +12,7 @@
 
 <body>
     <p id="title">We have an svg that will be converted in an image</p>
-    <canvas id="mycanvas" width="450" height="200"></canvas>
+    <canvas id="mycanvas" width="350" height="200"></canvas>
     <button type="button" onclick="convSvgToPng()">Convert to png</button>
     <p>The svg is below</p>
     <div id="thesvg">{{.SvgData}}</div>
@@ -64,7 +64,7 @@
         style.innerHTML = styleStr;
         defs.appendChild(style);
         var thesvg = document.getElementById("thesvg").firstChild;
-        thesvg.setAttribute('width', '450');
+        thesvg.setAttribute('width', '350');
         thesvg.insertBefore(defs, thesvg.firstElementChild);
         var svgMarkupWithStyle = (new XMLSerializer()).serializeToString(thesvg);
 
