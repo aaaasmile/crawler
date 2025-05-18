@@ -36,6 +36,12 @@ Per capire come funziona la visualizzazione del svg nel canvas sono partito dall
 che dopo diverse prove ha funzionato. Per il file scaricato chart02.svg, la sua visualizzazione 
 in html funziona, ma non quella nel canvas per via, credo, degli styles.
 
+## svg to png
+Come prima soluzione ho usato un canvas su un http server integrato che poi viene
+scaricato in formato png (funzione saveToPngItem). A me sembra ora un overkill in quanto
+la funzione takeSVGScreenshot riesce a salvare un componente della pagina in formato png
+senza bisogno del download in formato svg e successiva conversione.
+
 ### svg nel canvas
 Ho impiegato un po' a creare un canvas che disegni il mio svg scaricato dal sito dei chart.
 Il motivo è che, nel canvas, l'immagine svg deve inglobare al suo interno gli stylesheets che
@@ -131,6 +137,20 @@ codificare solo le sezioni.
 
 Nota che per usare il relay di invido, le credential sono nel db. Secret File json 
 viene usato solo per google.
+
+## Problemi
+Mi è comparso un errore del genere:
+
+    ERROR: could not unmarshal event: parse error: expected string near offset 1081 of 'cookiePart...'
+La soluzione è stata quella di effettuare un upgrade di chromedp
+
+     go get -u github.com/chromedp/chromedp
+Altro errore:
+
+    [scrapItem] error on chromedp.Run context deadline exceeded
+Questo si ha quando la query su un nodo non va a buon fine. Il contesto si esaurisce
+e non può più essere usato. Per nodi che sono opzionali, occorre due contesti.
+
 
 
 ## Sezione Obsoleta pi3 hole

@@ -9,6 +9,9 @@ import (
 	"github.com/aaaasmile/crawler/scraper/web"
 )
 
+// Used to download the svg and convert it to png
+// Try it with: go run .\main.go -skipsave  -limit 1
+// -screenshot if you want to capture the browser
 func main() {
 	start := time.Now()
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
@@ -17,7 +20,7 @@ func main() {
 	var dbpath = flag.String("dbpath", "../chart-info.db", "path to the db")
 	var limit = flag.Int("limit", -1, "limit the scraping file, (-1 is all)")
 	var screenshot = flag.Bool("screenshot", false, "take a screenshot of the chart page")
-	var coockies = flag.Bool("cookies", true, "expect cookies to click away")
+	var cookie = flag.Bool("cookie", true, "expect cookie to click away")
 	flag.Parse()
 	stopch := make(chan struct{})
 	msgch := make(chan string)
@@ -29,7 +32,7 @@ func main() {
 	}()
 
 	log.Println("Svg scraping and Png conversion")
-	sc := scrap.NewScrap(*screenshot, *coockies)
+	sc := scrap.NewScrap(*screenshot, *cookie)
 	if !*skipscrap {
 		if err := sc.Scrap(*dbpath, *limit); err != nil {
 			log.Fatal("Scraping error ", err)

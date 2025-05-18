@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	sel_1month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(2)`
-	sel_6month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
+	sel_6month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3) > input[type=radio]`
 	sel_svgnode      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
 	sel_spinner      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
 	coockie_selector = `#onetrust-accept-btn-handler`
@@ -96,6 +95,7 @@ func (sc *Scrap) SaveToPng() error {
 			} else {
 				aa = append(aa, moditem)
 			}
+			time.Sleep((500 * time.Millisecond))
 		} else {
 			aa = append(aa, item)
 		}
@@ -120,64 +120,97 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+	pageCtx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+	/// ackCtx is created from pageCtx.
+	// when ackCtx exceeds the deadline, pageCtx is not affected.
+	// This is needed beacuse the cookie popup is not always here. Without cookie the ctx is fault.
+	ackCtx, cancel := context.WithTimeout(pageCtx, 10*time.Second)
 	defer cancel()
 	var screenbuf []byte
 
-	// navigate to a page, wait for an element, click
+	// navigate to a page, wait for an element
 	var example string
-	err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(1920, 1080), // for cookies visibility
+	err := chromedp.Run(pageCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Navigate to chart")
-			return nil
-		}),
-		chromedp.Navigate(charturl),
-		// wait for footer element is visible (ie, page is loaded)
-		chromedp.WaitVisible(`body > footer`),
-		// dafault chart is intraday, not interesting for me
-		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible),
-		chromedp.ActionFunc(func(ctx context.Context) error {
+			fmt.Println("*** Navigate to chart - url: ", charturl)
+			if err := chromedp.Navigate(charturl).Do(ctx); err != nil {
+				log.Println("[scrapItem] error on navigation")
+				return err
+			}
+			fmt.Println("*** navigate ok")
+			if err := chromedp.WaitVisible(`body > footer`).Do(ctx); err != nil {
+				log.Println("[scrapItem] error on visible footer")
+				return err
+			}
+			fmt.Println("*** footer ok")
+			if err := chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error on visible footer")
+				return err
+			}
 			fmt.Println("*** initial spinner invisible")
 			return nil
 		}),
+	)
+	if err != nil {
+		log.Println("[scrapItem] error on chromedp.Run Navigate", err)
+		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
+		return err
+	}
+
+	if sc._cookies {
+		// note: here the ackCtx is used
+		log.Println("[scrapItem] expect cookie, try to click away")
+		err = chromedp.Run(ackCtx,
+			chromedp.EmulateViewport(1920, 1080), // for cookies visibility
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				if err := chromedp.Query(coockie_selector, chromedp.NodeReady).Do(ctx); err == nil {
+					log.Println("[scrapItem] coockies recognized")
+					if err := chromedp.Click(coockie_selector, chromedp.NodeVisible).Do(ctx); err != nil {
+						log.Println("[scrapItem] Click on cookie accept error: ", err)
+						return err
+					}
+					fmt.Println("*** cookies hidden")
+				} else {
+					log.Println("[scrapItem] no cookie window recognized")
+				}
+				return err
+			}),
+		)
+		if err != nil {
+			log.Println("[scrapItem] some error on cookie", err)
+		}
+	}
+	log.Println("[scrapItem] continue")
+	err = chromedp.Run(pageCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			if sc._cookies {
-				// click cookies with abs x,y click. Which selector works? Tried somes but without success
-				log.Println("Expect coockies, try to click away")
-				chromedp.WaitReady(`#onetrust-policy-text > div > a`, chromedp.NodeVisible).Do(ctx)
-				chromedp.MouseClickXY(960, 750).Do(ctx)
-				//time.Sleep(2 * time.Second)
-				chromedp.WaitReady(`#onetrust-policy-text > div > a`, chromedp.NodeNotVisible).Do(ctx)
-				fmt.Println("*** cookies hidden")
+			fmt.Println("*** select 6 month")
+			if err := chromedp.WaitVisible(sel_6month, chromedp.NodeVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error sel_6month")
+				return err
+			}
+			if err := chromedp.Click(sel_6month, chromedp.NodeVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error click sel_6month")
+				return err
+			}
+			fmt.Println("*** Click 6-month done")
+			if err := chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error on svg visible")
+				return err
 			}
 			return nil
 		}),
-
-		//chromedp.DoubleClick(`#onetrust-policy-text > div > ul`, chromedp.NodeReady),
-		chromedp.Click(sel_6month, chromedp.NodeVisible),
-		// click on chart  Monat,  use Browser Copy Selector for this link and make sure that the link is not active
-		// coockies popup
-		//chromedp.ScrollIntoView(`#onetrust-group-container`, chromedp.NodeReady),
-		// chromedp.Click(`#onetrust-policy-text > div > ul > li:nth-child(3)`, chromedp.NodeVisible),
-		// chromedp.ActionFunc(func(ctx context.Context) error {
-		// 	log.Println("popup clicked")
-		// 	return nil
-		// }),
-		//chromedp.Click(`#onetrust-pc-btn-handler`, chromedp.NodeVisible),
-		// chromedp.ActionFunc(func(ctx context.Context) error {
-		// 	log.Println("coockies clicked away")
-		// 	return nil
-		// }),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Click 6-month done")
-			return nil
-		}),
-		chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
 			log.Println("sleep after svg container...")
 			time.Sleep(2 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
+			if sc._takeScreenshot {
+				if err := takeSVGScreenshot(&ctx); err != nil {
+					return err
+				}
+			}
 			return nil
 		}),
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
@@ -187,7 +220,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 				log.Println("Take a small screenshot")
 				act := chromedp.CaptureScreenshot(&screenbuf)
 				act.Do(ctx)
-				if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
+				if err := os.WriteFile("static\\data\\pagechart001.png", screenbuf, 0644); err != nil {
 					return err
 				}
 				log.Println("Screenshot saved ok")
@@ -197,7 +230,8 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.InnerHTML(sel_svgnode, // finally get the chart
 			&example,
 			chromedp.NodeVisible),
-	)
+	) // SVG is done
+
 	if err != nil {
 		log.Println("[scrapItem] error on chromedp.Run", err)
 		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
@@ -212,18 +246,29 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	}
 
 	log.Println("svg file written ", outfname)
-	// if sc._takeScreenshot {
-	// 	if err := os.WriteFile("pagechart.png", screenbuf, 0644); err != nil {
-	// 		return err
-	// 	}
-	// 	log.Println("Screenshot saved ok")
-	// }
 	scitem := &ScrapItem{
 		_id:       id,
 		_svg_path: outfname,
 		_svg_name: util.GetChartSVGFileNameOnly(id),
 	}
 	sc._svgs = append(sc._svgs, scitem)
+	return nil
+}
+
+func takeSVGScreenshot(ctx *context.Context) error {
+	// probably this is better then saveToPngItem and simpler
+	log.Println("[takeSVGScreenshot] start")
+	var buf []byte
+	if err := chromedp.Screenshot(sel_svgnode, &buf).Do(*ctx); err != nil {
+		log.Println("[takeSVGScreenshot] screenshot error: ", err)
+		return err
+	}
+	fname := "static\\data\\screen_chart_00.png"
+	if err := os.WriteFile(fname, buf, 0o644); err != nil {
+		log.Println("[takeSVGScreenshot] screenshot save error: ", err)
+		return err
+	}
+	log.Println("[takeSVGScreenshot] saved to ", fname)
 	return nil
 }
 

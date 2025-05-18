@@ -130,7 +130,7 @@ func (cc *CrawlerOfChart) buildTheChartList() error {
 		mapStock[v.ID] = v
 	}
 	for _, v := range stockList {
-		go pickChartDetail(v.ChartURL, v.ID, cc.serverURI, chRes)
+		go pickChartDetail(v.ChartURL, v.ID, chRes)
 	}
 
 	chTimeout := make(chan struct{})
@@ -285,7 +285,7 @@ func (cc *CrawlerOfChart) sendMailViaRelay(mm *mail.MailSender) error {
 	return nil
 }
 
-func pickChartDetail(URL string, id int64, serverURI string, chItem chan *InfoChart) {
+func pickChartDetail(URL string, id int64, chItem chan *InfoChart) {
 	log.Println("Fetching chart for ", id, URL)
 	c := colly.NewCollector()
 	sent := false

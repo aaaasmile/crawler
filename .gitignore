@@ -10,3 +10,4 @@ scraper/datapng/*.png
 scraper/scraper.bin
 passaggi_privati.md
 scraper/pagechart.png
+scraper/static/data/*.png
