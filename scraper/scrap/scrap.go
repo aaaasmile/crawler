@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	sel_6month       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3) > input[type=radio]`
-	sel_svgnode      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
-	sel_spinner      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
-	coockie_selector = `#onetrust-accept-btn-handler`
+	sel_6month      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3) > input[type=radio]`
+	sel_svgnode     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
+	sel_spinner     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
+	cookie_selector = `#onetrust-accept-btn-handler`
 )
 
 const (
@@ -166,17 +166,19 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		err = chromedp.Run(ackCtx,
 			chromedp.EmulateViewport(1920, 1080), // for cookies visibility
 			chromedp.ActionFunc(func(ctx context.Context) error {
-				if err := chromedp.Query(coockie_selector, chromedp.NodeReady).Do(ctx); err == nil {
-					log.Println("[scrapItem] coockies recognized")
-					if err := chromedp.Click(coockie_selector, chromedp.NodeVisible).Do(ctx); err != nil {
-						log.Println("[scrapItem] Click on cookie accept error: ", err)
+				// why chromedp.Click( cookie_selector) is not working?
+				if err := chromedp.Query(cookie_selector, chromedp.NodeReady).Do(ctx); err == nil {
+					log.Println("[scrapItem] cookie recognized")
+					// since Click is not working, use MouseClickXY
+					// to get the correct coordinate, please check the screenshot an try better coordinates
+					// use the flag -screenshot and inspect pagechart001.png
+					if err := chromedp.MouseClickXY(960, 650).Do(ctx); err != nil {
+						log.Println("[scrapItem] cookie click error")
 						return err
 					}
-					fmt.Println("*** cookies hidden")
-				} else {
-					log.Println("[scrapItem] no cookie window recognized")
+					log.Println("[scrapItem] cookie accepted")
 				}
-				return err
+				return nil
 			}),
 		)
 		if err != nil {
@@ -220,7 +222,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 				log.Println("Take a small screenshot")
 				act := chromedp.CaptureScreenshot(&screenbuf)
 				act.Do(ctx)
-				if err := os.WriteFile("static\\data\\pagechart001.png", screenbuf, 0644); err != nil {
+				if err := os.WriteFile("static/data/pagechart001.png", screenbuf, 0644); err != nil {
 					return err
 				}
 				log.Println("Screenshot saved ok")
@@ -263,7 +265,7 @@ func takeSVGScreenshot(ctx *context.Context) error {
 		log.Println("[takeSVGScreenshot] screenshot error: ", err)
 		return err
 	}
-	fname := "static\\data\\screen_chart_00.png"
+	fname := "static/data/screen_chart_00.png"
 	if err := os.WriteFile(fname, buf, 0o644); err != nil {
 		log.Println("[takeSVGScreenshot] screenshot save error: ", err)
 		return err
