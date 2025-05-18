@@ -199,6 +199,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			chromedp.NodeVisible),
 	)
 	if err != nil {
+		log.Println("[scrapItem] error on chromedp.Run", err)
 		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
 		return err
 	}
