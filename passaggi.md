@@ -13,6 +13,15 @@ Per avere cgo (richiesto da go-sqlite3) bisogna settare il path:
 Sul mio mini-k7 per effettuare un build devo usare:
 
 	go build -buildvcs=false
+
+Su server dell'invido devo lanciare due programmi:
+
+    - scraper.bin
+    - crawler.bin
+
+Scarper mi server per scaricare le immagini(usa l'installazione locale di google-chrome), 
+mentre crawler.bin manda la mail inglobando le immagini precedentemente scaricate.
+crawler.bin è responsabile anche del parsing dei valori delle quortazioni.
 	
 ## Nuovo sito aprile 2023
 Il service del chart è stato aggiornato in 04.23. Non ci sono più chart
@@ -41,6 +50,9 @@ Come prima soluzione ho usato un canvas su un http server integrato che poi vien
 scaricato in formato png (funzione saveToPngItem). A me sembra ora un overkill in quanto
 la funzione takeSVGScreenshot riesce a salvare un componente della pagina in formato png
 senza bisogno del download in formato svg e successiva conversione.
+In ogni modo takeSVGScreenshot non viene usata durante lo scraping, ma l'iniziale svg to png.
+takeSVGScreenshot è usata solo per creare esplicitamente dei screenshot di chrome per vedere
+quello che si sta analizzando (flag di input).
 
 ### svg nel canvas
 Ho impiegato un po' a creare un canvas che disegni il mio svg scaricato dal sito dei chart.
@@ -91,7 +103,7 @@ Il secondo programma riceve i dati dei prezzi, aggiunge il file png scaricato de
 Ho fatto il deployment sul server dell'invido, dove ho aggiornato golang ed ho installato
 google-chrome. Per aggiornare golang ho seguito le istruzioni della homepage di golang,
 dove ho scaricato il tar, cancellata la distribuzione corrente in /usr/local/go e
-scompattao il tar nel /usr/local/go (vedi anche le istruzioni del raspberry).
+scompatto il tar nel /usr/local/go (vedi anche le istruzioni del raspberry).
 Qui ho avuto un problema col click del cambio scala del grafico (6 mesi). La ragione è dovuta
 al popup dei cookies, che mi compare solo su alcune distribuzioni di WSL e invido, ma non su Windows.
 Lo screenshot del contenuto del chart mi ha mostrato il problema. Il selector dei pulsanti
@@ -115,6 +127,9 @@ Ho installato google-chrome con la seguente sequenza:
     wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
     sudo dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
     sudo apt-get --fix-broken install
+Se ci sono dei problemi con le dipendenze (esempio in ubunut 24.04):
+
+    sudo apt --fix-broken install
 
 Qui https://github.com/geziyor/geziyor/issues/27 viene spiegato il problema.
 Un altro link utile è: https://github.com/Zenika/alpine-chrome
