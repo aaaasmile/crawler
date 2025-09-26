@@ -5,11 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch file",
+            "name": "Scraper",
             "type": "go",
             "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/scraper/main.go"
+            "mode": "auto",
+            "program": "${workspaceFolder}/scraper/main.go",
+            "args": ["-limit", "1", "-noautofinish"]
         }
     ]
 }

@@ -17,15 +17,16 @@ import (
 
 const (
 	// following selectors are all inside the chart. They can change, so you have to inspect it inside the browser and copy the selector
-	sel_6month      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
-	sel_1year       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(4)`
+	sel_6month = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
+	sel_1year  = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(4)`
+	//sel_svgnode should be exact the <svg> node, or you need a post process
 	sel_svgnode     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.chart-container`
 	sel_spinner     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.chart-container > div.loading-overlay.center-spinner`
 	cookie_selector = `#onetrust-accept-btn-handler`
 )
 
 const (
-	service_svgtopng = "http://127.0.0.1:5903/svg/"
+	service_svgtopng = "http://localhost:5903/svg/"
 )
 
 type ScrapItem struct {
@@ -92,7 +93,7 @@ func (sc *Scrap) SaveToPng() error {
 		if item._err == nil {
 			moditem, err := sc.saveToPngItem(item)
 			if err != nil {
-				log.Println("error on save to png ", err) // continue save ignoring wrong items
+				log.Println("[SaveToPng] error:", err) // continue save ignoring wrong items
 				aa = append(aa, item)
 			} else {
 				aa = append(aa, moditem)
@@ -134,7 +135,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	var screenbuf []byte
 
 	// navigate to a page, wait for an element
-	var example string
+	var svgTag string
 	err := chromedp.Run(pageCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to chart - url: ", charturl)
@@ -220,6 +221,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** spinner invisible")
+			time.Sleep(1 * time.Second) // wait some progress after spinner disappear
 			if sc._takeScreenshot {
 				log.Println("Take a small screenshot")
 				act := chromedp.CaptureScreenshot(&screenbuf)
@@ -232,7 +234,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			return nil
 		}),
 		chromedp.InnerHTML(sel_svgnode, // finally get the chart
-			&example,
+			&svgTag,
 			chromedp.NodeVisible),
 	) // SVG is done
 
@@ -242,9 +244,14 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		return err
 	}
 	log.Println("run scraping terminated ok")
-	//log.Printf("SVG after get:\n%s", example)
+	//log.Printf("SVG after get:\n%s", svgTag)
+	// the svgTag could not be exact the svg only tag. The web insert some noise to make scraping difficult
+	svgTag = extractSVGSimple(svgTag)
+	if svgTag == "" {
+		return fmt.Errorf("[scrapItem] svg tag is empty. Check the svg chart selector (sel_svgnode)")
+	}
 	outfname := util.GetChartSVGFullFileName(id)
-	if err = os.WriteFile(outfname, []byte(example), 0644); err != nil {
+	if err = os.WriteFile(outfname, []byte(svgTag), 0644); err != nil {
 		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
 		return err
 	}
@@ -259,6 +266,34 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	return nil
 }
 
+func extractSVGSimple(html string) string {
+	start := strings.Index(html, "<svg")
+	if start == -1 {
+		return ""
+	}
+
+	// Find the closing SVG tag
+	remaining := html[start:]
+	depth := 0
+	i := 0
+
+	for i < len(remaining) {
+		if strings.HasPrefix(remaining[i:], "<svg") {
+			depth++
+			i += 4
+		} else if strings.HasPrefix(remaining[i:], "</svg>") {
+			depth--
+			i += 6
+			if depth == 0 {
+				return remaining[:i]
+			}
+		} else {
+			i++
+		}
+	}
+	return ""
+}
+
 func takeSVGScreenshot(ctx *context.Context) error {
 	// probably this is better then saveToPngItem and simpler
 	log.Println("[takeSVGScreenshot] start")
@@ -267,7 +302,7 @@ func takeSVGScreenshot(ctx *context.Context) error {
 		log.Println("[takeSVGScreenshot] screenshot error: ", err)
 		return err
 	}
-	fname := "static/data/screen_chart_00.png"
+	fname := "static/data/svg_screen_chart_00.png"
 	if err := os.WriteFile(fname, buf, 0o644); err != nil {
 		log.Println("[takeSVGScreenshot] screenshot save error: ", err)
 		return err
@@ -318,7 +353,7 @@ func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) (*ScrapItem, error) {
 	log.Println("using the service ", urlstr)
 	if err = chromedp.Run(ctx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Navigate to svg converter")
+			fmt.Println("*** Navigate to svg converter", urlstr)
 			return nil
 		}),
 		chromedp.Navigate(urlstr),

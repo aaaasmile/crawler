@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/aaaasmile/crawler/idl"
 	"github.com/aaaasmile/crawler/scraper/scrap"
 	"github.com/aaaasmile/crawler/scraper/web"
 )
@@ -27,7 +26,7 @@ func main() {
 	var cookie = flag.Bool("cookie", true, "expect cookie to click away")
 	flag.Parse()
 	if *ver {
-		fmt.Printf("%s  version %s", idl.Appname, idl.Buildnr)
+		fmt.Printf("Scraper version %s", web.Buildnr)
 		os.Exit(0)
 	}
 

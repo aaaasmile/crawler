@@ -23,7 +23,7 @@ type PageCtx struct {
 }
 
 const (
-	buildnr = "00.20231229.11.00"
+	Buildnr = "00.20250926.12.00"
 )
 
 func handleGetID(w http.ResponseWriter, req *http.Request) error {
@@ -56,7 +56,7 @@ func handleGetID(w http.ResponseWriter, req *http.Request) error {
 	svgstr = strings.ReplaceAll(svgstr, "\n", "")
 	svgstr = strings.ReplaceAll(svgstr, "\r", "")
 	pagectx := PageCtx{
-		Buildnr: buildnr,
+		Buildnr: Buildnr,
 		SvgData: svgstr,
 	}
 
@@ -66,6 +66,7 @@ func handleGetID(w http.ResponseWriter, req *http.Request) error {
 
 	err = tmplIndex.ExecuteTemplate(w, "base", pagectx)
 	if err != nil {
+		fmt.Println("[handleGetID] error on ExecuteTemplate")
 		return err
 	}
 
@@ -84,7 +85,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 
 func StartServer(cr <-chan struct{}) {
 	//scrap.Scrap()
-	serverurl := "127.0.0.1:5903"
+	serverurl := "localhost:5903"
 	rootURLPattern := "/svg/"
 	finalServURL := fmt.Sprintf("http://%s%s", strings.Replace(serverurl, "0.0.0.0", "localhost", 1), rootURLPattern)
 
@@ -104,7 +105,7 @@ func StartServer(cr <-chan struct{}) {
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.Println("Server is not listening anymore: ", err)
+			log.Println("[CAUTION] Server is not listening anymore. Error: ", err)
 		}
 	}()
 	sig := make(chan os.Signal, 1)
