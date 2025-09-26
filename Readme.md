@@ -1,25 +1,11 @@
 # Crawler
-The Crawler downloads some charts and sent it via secure email. 
-Used to weekly monitor some stock charts without clicking each single chart.
+The Crawler downloads stock charts and sends them via secure email. It's used to monitor stock charts weekly without manually checking each individual chart.
 
 ## How it works
-First the program Scraper (scraper/main.go) download the svg file and transform it into a png file.
-The result of the Scraper is used by the Crawler to generate the chart email with embedded images.
-The email is sent using an Smtp Mail relay over Tls transport.
+First, the Scraper program (scraper/main.go) downloads SVG files and converts them into PNG format. The Crawler then uses the Scraper's output to generate an email with embedded chart images. The email is sent using an SMTP mail relay over TLS transport.
 
 ## Database
-The stock list is stored into a sqlite database created with the sql script stockinfo-ref-db.sql.
+The stock list is stored in a SQLite database created with the SQL script stockinfo-ref-db.sql.
 
 ## Scraper
-The Scraper is needed to convert complex svg files with styles into a simple png file, that it is easy to embed inside an email.
-The Svg To Png conversion is done using an embedded Web Server that draw the svg inside a canvas with all svg styles embedded and it triggers the download by an automatic button click. The Web Server could also be accessed by within a normal browser with:
-
-    cd scraper
-    go main.go -noautofinish
-    http://localhost:5903/svg/3   
-    
-Here 3, at the end of the url, is the image id, for eample for the file chart03.svg inside the static/data folder. 
-chart03.svg is created by the scarper when the chart with the id 3 is downloaded.
-Urls and ids are stored inside the database into the table stockinfo.
-
-![Web Server](./scraper/static/datatest/screenexample.png)  
+The Scraper is needed to convert complex SVG files with styles into simple PNG files that are easy to embed in emails. The SVG to PNG conversion is done using chromedp screenshot functionality.
