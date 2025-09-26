@@ -8,20 +8,8 @@ import (
 )
 
 const (
-	datasvgdir = "static/data/"
 	datapngdir = "../data/"
 )
-
-func GetChartSVGFullFileName(id int) string {
-	svg_filename := GetChartSVGFileNameOnly(id)
-	svg_fullfilename := filepath.Join(datasvgdir, svg_filename)
-	return svg_fullfilename
-}
-
-func GetChartSVGFileNameOnly(id int) string {
-	svg_filename := fmt.Sprintf("chart%02d.svg", id)
-	return svg_filename
-}
 
 func GetChartPNGFullFileName(id int) string {
 	png_filename := GetChartPNGFileNameOnly(id)
@@ -48,14 +36,8 @@ func removeGlob(path string) (err error) {
 	return
 }
 
-func CleanSVGPNGData() error {
-	log.Println("Clean up data dir (remove png and svg files)")
-	{
-		svg_filter := fmt.Sprintf("%s*.svg", datasvgdir)
-		if err := removeGlob(svg_filter); err != nil {
-			return err
-		}
-	}
+func CleanPNGData() error {
+	log.Println("Clean up data dir (remove png files)")
 	{
 		png_filter := fmt.Sprintf("%s*.png", datapngdir)
 		if err := removeGlob(png_filter); err != nil {

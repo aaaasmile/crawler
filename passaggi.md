@@ -32,59 +32,15 @@ ho cominciato a scaricare i chart usando github.com/chromedp (vedi somtest dir).
 Al momento ho eliminato la sezione delle immagini dal template (tag img)
 
 ## svg (progetto scraper)
-Le nuove immagini sono in formato svg. Però hanno anche il tag class che deve essere
-incluso. Nella directory "scraper", riesco a scaricare il file svg senza problemi 
-(posizionarsi sul chart 6 mesi, però, non è triviale), però
-quando lo apro risulta nero. 
-Il processo di conversione avviene in due step. Per prima cosa uso uno scrap per eseguire
-il download del file svg, che al momento viene messo in scraper/static/data/
-Poi uso un http server per mostrare il file svg e fare in modo che attraverso il canvas diventi
-un'immagine png. Lo style per il grafico è messo dentro al file main.css che ho trovato quando
-ho salvato la pagina dal browser sul mio hard disk.
-Per capire come funziona la visualizzazione del svg nel canvas sono partito dall'esempio dell'ellisse,
-che dopo diverse prove ha funzionato. Per il file scaricato chart02.svg, la sua visualizzazione 
-in html funziona, ma non quella nel canvas per via, credo, degli styles.
+Le nuove immagini sono in formato svg. Per salvarle in png uso la funzionalità takeSVGScreenshot
+senza web server con canvas.
 
 ## svg to png
-Come prima soluzione ho usato un canvas su un http server integrato che poi viene
-scaricato in formato png (funzione saveToPngItem). A me sembra ora un overkill in quanto
-la funzione takeSVGScreenshot riesce a salvare un componente della pagina in formato png
+La funzione takeSVGScreenshot riesce a salvare un componente della pagina in formato png
 senza bisogno del download in formato svg e successiva conversione.
-In ogni modo takeSVGScreenshot non viene usata durante lo scraping, ma l'iniziale svg to png.
-takeSVGScreenshot è usata solo per creare esplicitamente dei screenshot di chrome per vedere
-quello che si sta analizzando (flag di input).
-
-### svg nel canvas
-Ho impiegato un po' a creare un canvas che disegni il mio svg scaricato dal sito dei chart.
-Il motivo è che, nel canvas, l'immagine svg deve inglobare al suo interno gli stylesheets che
-servono per mostrare l'immagine. Nel mio caso è il file main.css. Il procedimento è quello di
-prendere il file svg usando document.getElementById. 
-Nel mio caso è il firstchild del div id="thesvg" (nota che è una property e non una funzione).
-Ora con l'elemento del DOM svg in mano, si deve inserire al primo posto il contenuto di main.css
- (basta solo questo e non tutti gli altri css) in un Dom def->style. Il mio dom svg ha ora 17 children node, anzichè 16 originali. Ora basta ricreare il sorgente xml e per questo si 
- usa (new XMLSerializer()).serializeToString(thesvg). Il sorgente xml diventa il contenuto di
- un Blob, che a sua volta viene identificato da una url (si usa DOMURL.createObjectURL() ).
- Questa url divena il sorgente dell'immagine da mostrare nel canvas (img.src = url e img.onload).  
-Due aspetti non sono ancora corretti. Il primo sono i font. Nel trace del service noto
-
-    GET requested  /svg/fonts/DINPro-Regular.woff
-che signica che la url del font invece di fonts/DINPro-Regular.woff dovrebbe essere 
-static/css/fonts/DINPro-Regular.woff
-La seconda è di natura cosmetica, ma nella Array.prototype.forEach.call(sheets, function(sheet)
-dovrebbe comparire solo main.css.
-Per i font ho provato questa sequenza in main.css:
-src: url('data:application/font-woff;charset=utf-8;base64,d09GRk9...');
-L'ho provato per il font DINPro-Regular.woff, che è quello che carica quando viene mostrato il grafico. 
-Il problema è che nel canvas non viene usato anche se è embedded. Allora ho ripristinato main.css
-in quanto si carica più velocemente.
-
-Queste le risorse usate:
-- https://stackoverflow.com/questions/41340468/convert-svg-to-image-in-png
-- https://stackoverflow.com/questions/41571622/how-to-include-css-style-when-converting-svg-to-png
-- https://stackoverflow.com/questions/49666196/convert-svg-to-png-with-styles
 
 ### svg png nella Mail
-Quando il programma riesce a scaricare il svg ed a convertirlo in png, basta che poi metta
+Quando il programma riesce a scaricare il svg in png, basta che poi metta
 il file nella directory data. Il nome è chart_{id}.png, dove id è la primary key del record nel db di 
 stocklist (vedi la funzione buildChartListFromLastDown). Poi si tratta di ripristinare il tag img nel 
 template della mail
@@ -94,10 +50,6 @@ Non va chiamata la funzione buildChartListFromLastDown, che comunque va ripristi
 ma nella buildTheChartList, dove ho messo il TODO.
 Così ho due exe che vanno in cascata. Il primo scarica i files svg e li converte in png per ogni stockprice.
 Il secondo programma riceve i dati dei prezzi, aggiunge il file png scaricato del chart ed invia la mail.  
-
-## TODO
- - vedi di mettere l'immagine svg del chart nella mail. Manca lo scraping partendo dal db. [DONE]
- - nel download dello scrap, il blocking del download deve avere un timeout. [DONE] 
 
 ## Deployment su invido
 Ho fatto il deployment sul server dell'invido, dove ho aggiornato golang ed ho installato
@@ -166,48 +118,8 @@ Altro errore:
 Questo si ha quando la query su un nodo non va a buon fine. Il contesto si esaurisce
 e non può più essere usato. Per nodi che sono opzionali, occorre due contesti.
 
+Nel Log questo:
 
-
-## Sezione Obsoleta pi3 hole
-Non utilizzo più pi3 a malinquore, ma il fatto di dover usare ora chrome-headless
-mi ha fatto abbandonare l'idea.
-
-## Deployment (obsoleto)
-Questo programma viene lanciato tutte le settimane da un cronjob su pi3-hole
-Questo è il comando che ho usato in crontab (ogni venerdì alle 18:28)
-28 18 * * 5  cd /home/igors/projects/go/crawler && ./crawler.bin > /tmp/crawler.log
-Per fare andare crontab -e bisogna lanciare sudo raspi-config e settare la time zone.
-Dopo un reboot crontab -e funziona. Ad un certo però, su pi3-hole crontab non ha più funzionato.
-Vedi il file di readme-pihole di per come ho risolto, ma ho dovuto usare un'alternativa a crontab.
-Per questo ho usato Anacron, che però, mi manda l'email giovedi sera anziché il venerdì sera.
-
-## Aggiornare il programma (nota che non uso più pi3 per via dello scraper)
-Per aggiornare il programma crawler su pi3-hole basta aggiornarlo su windows e 
-poi con WSL:
-
-    ssh igors@pi3.local
-    cd /home/igors/projects/go/crawler
-    git pull
-    git mod tidy
-    go build -o crawler.bin
-
-Per avere il db in locale dal target:
-rsync -chavzP --stats igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db . 
-Per rimetterlo indietro:
-rsync -chavzP --stats ./chart-info.db igors@pi3.local:/home/igors/projects/go/crawler/chart-info.db
-
-Poi basta lanciare ./crawler.bin per vedere se tutto funziona a dovere.
-Ho dovuto fare un aggiornamento di go alla versione 1.21 e qui ho avuto qualche problema.
-La versione da installare è la arm6l e non la arm64. In più ero su un branch che poi ho cancellato in remoto.
-Quando poi ricompilo il programma con go nuovo di pacca, impiega molto tempo perché ricompila con cc sqlite3.
-In più pi3 è molto lento, ma funziona.
-Un altro problema l'ho avuto con x/clipboard, che poi ho tolto per evitare problemi con 
-    
-    #include <X11/Xlib.h>.
-Per verdere la lista dei branch:
-
-    git branch
-    git checkout main
-    git pull
-
-
+    2025/09/26 22:20:00 ERROR: could not unmarshal event: json: cannot unmarshal JSON string into Go network.IPAddressSpace within "/clientSecurityState/initiatorIPAddressSpace": unknown IPAddressSpace value: Loopback
+sembra dovuto a qualche oscuro log di chromedp che esegue il download su localhost.
+Ho ignorato l'errore in quanto il download funziona.
