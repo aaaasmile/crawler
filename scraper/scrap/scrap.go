@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aaaasmile/crawler/db"
 	"github.com/aaaasmile/crawler/scraper/util"
-	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
 )
 
@@ -31,8 +28,6 @@ const (
 
 type ScrapItem struct {
 	_id       int
-	_svg_path string
-	_svg_name string
 	_png_path string
 	_png_name string
 	_err      error
@@ -53,7 +48,7 @@ func NewScrap(takescreen, cookies bool) *Scrap {
 }
 
 func (sc *Scrap) Scrap(dbPath string, limit int) error {
-	if err := util.CleanSVGPNGData(); err != nil {
+	if err := util.CleanPNGData(); err != nil {
 		return err
 	}
 
@@ -84,36 +79,6 @@ func (sc *Scrap) Scrap(dbPath string, limit int) error {
 	return nil
 }
 
-func (sc *Scrap) SaveToPng() error {
-	if len(sc._svgs) == 0 {
-		return fmt.Errorf("no svg provided")
-	}
-	aa := []*ScrapItem{}
-	for _, item := range sc._svgs {
-		if item._err == nil {
-			moditem, err := sc.saveToPngItem(item)
-			if err != nil {
-				log.Println("[SaveToPng] error:", err) // continue save ignoring wrong items
-				aa = append(aa, item)
-			} else {
-				aa = append(aa, moditem)
-			}
-			time.Sleep((500 * time.Millisecond))
-		} else {
-			aa = append(aa, item)
-		}
-	}
-	sc._svgs = aa
-	log.Println("all svg to png files processed ", len(aa))
-	return nil
-}
-
-func (sc *Scrap) PrepareTestSVG() {
-	// some test files
-	sc._svgs = []*ScrapItem{{_id: 1, _svg_name: "chart01.svg", _svg_path: "static/data/chart01.svg"}}
-	fmt.Println("using some test data ", sc._svgs[0])
-}
-
 func (sc *Scrap) scrapItem(charturl string, id int) error {
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
@@ -135,7 +100,6 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	var screenbuf []byte
 
 	// navigate to a page, wait for an element
-	var svgTag string
 	err := chromedp.Run(pageCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** Navigate to chart - url: ", charturl)
@@ -209,33 +173,34 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** svg container is ready")
-			log.Println("sleep after svg container...")
-			time.Sleep(2 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
-			if sc._takeScreenshot {
-				if err := takeSVGScreenshot(&ctx); err != nil {
-					return err
-				}
-			}
+			//log.Println("sleep after svg container...")
+			//time.Sleep(2 * time.Second) // this is important because data are loaded in background and is not clear wich selector is active after that
 			return nil
 		}),
 		chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible), // this is also important to get all data
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			fmt.Println("*** spinner invisible")
-			time.Sleep(1 * time.Second) // wait some progress after spinner disappear
+			time.Sleep(1 * time.Second) // wait some progress after spinner disappear beacuse chart is fading
+			scitem := &ScrapItem{
+				_id: id,
+			}
+			sc._svgs = append(sc._svgs, scitem)
+
+			if err := sc.saveSVGtoPng(&ctx, scitem); err != nil {
+				return err
+			}
+
 			if sc._takeScreenshot {
 				log.Println("Take a small screenshot")
 				act := chromedp.CaptureScreenshot(&screenbuf)
 				act.Do(ctx)
-				if err := os.WriteFile("static/data/pagechart001.png", screenbuf, 0644); err != nil {
+				if err := os.WriteFile("static/data/fullpage001.png", screenbuf, 0644); err != nil {
 					return err
 				}
 				log.Println("Screenshot saved ok")
 			}
 			return nil
 		}),
-		chromedp.InnerHTML(sel_svgnode, // finally get the chart
-			&svgTag,
-			chromedp.NodeVisible),
 	) // SVG is done
 
 	if err != nil {
@@ -244,191 +209,43 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 		return err
 	}
 	log.Println("run scraping terminated ok")
-	//log.Printf("SVG after get:\n%s", svgTag)
-	// the svgTag could not be exact the svg only tag. The web insert some noise to make scraping difficult
-	svgTag = extractSVGSimple(svgTag)
-	if svgTag == "" {
-		return fmt.Errorf("[scrapItem] svg tag is empty. Check the svg chart selector (sel_svgnode)")
-	}
-	outfname := util.GetChartSVGFullFileName(id)
-	if err = os.WriteFile(outfname, []byte(svgTag), 0644); err != nil {
-		sc._svgs = append(sc._svgs, &ScrapItem{_err: err})
-		return err
-	}
-
-	log.Println("svg file written ", outfname)
-	scitem := &ScrapItem{
-		_id:       id,
-		_svg_path: outfname,
-		_svg_name: util.GetChartSVGFileNameOnly(id),
-	}
-	sc._svgs = append(sc._svgs, scitem)
 	return nil
 }
 
-func extractSVGSimple(html string) string {
-	start := strings.Index(html, "<svg")
-	if start == -1 {
-		return ""
-	}
-
-	// Find the closing SVG tag
-	remaining := html[start:]
-	depth := 0
-	i := 0
-
-	for i < len(remaining) {
-		if strings.HasPrefix(remaining[i:], "<svg") {
-			depth++
-			i += 4
-		} else if strings.HasPrefix(remaining[i:], "</svg>") {
-			depth--
-			i += 6
-			if depth == 0 {
-				return remaining[:i]
-			}
-		} else {
-			i++
-		}
-	}
-	return ""
-}
-
-func takeSVGScreenshot(ctx *context.Context) error {
+func (sc *Scrap) saveSVGtoPng(ctx *context.Context, scrapItem *ScrapItem) error {
 	// probably this is better then saveToPngItem and simpler
-	log.Println("[takeSVGScreenshot] start")
+	log.Println("[saveSVGtoPng] start")
 	var buf []byte
 	if err := chromedp.Screenshot(sel_svgnode, &buf).Do(*ctx); err != nil {
-		log.Println("[takeSVGScreenshot] screenshot error: ", err)
+		log.Println("[saveSVGtoPng] screenshot error: ", err)
+		scrapItem._err = err
 		return err
 	}
-	fname := "static/data/svg_screen_chart_00.png"
-	if err := os.WriteFile(fname, buf, 0o644); err != nil {
-		log.Println("[takeSVGScreenshot] screenshot save error: ", err)
+	destPath := util.GetChartPNGFullFileName(scrapItem._id)
+	scrapItem._png_name = util.GetChartPNGFileNameOnly(scrapItem._id)
+	scrapItem._png_path = destPath
+
+	if err := os.WriteFile(destPath, buf, 0o644); err != nil {
+		log.Println("[saveSVGtoPng] save error: ", err)
 		return err
 	}
-	log.Println("[takeSVGScreenshot] saved to ", fname)
+	log.Println("[saveSVGtoPng] saved to ", destPath)
 	return nil
-}
-
-func (sc *Scrap) saveToPngItem(scrapItem *ScrapItem) (*ScrapItem, error) {
-	// reference: https://github.com/chromedp/examples/blob/master/download_file/main.go
-	ctx, cancel := chromedp.NewContext(
-		context.Background(),
-	)
-	defer cancel()
-
-	done := make(chan string, 1)
-	cr := make(chan struct{})
-
-	chromedp.ListenTarget(ctx, func(v interface{}) {
-		if ev, ok := v.(*browser.EventDownloadProgress); ok {
-			completed := "(unknown)"
-			if ev.TotalBytes != 0 {
-				completed = fmt.Sprintf("%0.2f%%", ev.ReceivedBytes/ev.TotalBytes*100.0)
-			}
-			log.Printf("state: %s, completed: %s\n", ev.State.String(), completed)
-			if ev.State == browser.DownloadProgressStateCompleted {
-				done <- ev.GUID
-				close(done)
-			} else if ev.State == browser.DownloadProgressStateCanceled {
-				cr <- struct{}{}
-				close(cr)
-			}
-		}
-	})
-
-	// create a timeout
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	var err error
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println("using directory ", wd) // the best way
-	// navigate to a page, wait for an element, click
-	urlstr := fmt.Sprintf("%s%d", service_svgtopng, scrapItem._id)
-	log.Println("using the service ", urlstr)
-	if err = chromedp.Run(ctx,
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Navigate to svg converter", urlstr)
-			return nil
-		}),
-		chromedp.Navigate(urlstr),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Wait visible")
-			return nil
-		}),
-		chromedp.WaitVisible(`#thesvg > svg`),
-		browser.
-			SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
-			WithDownloadPath(wd).
-			WithEventsEnabled(true),
-		chromedp.Click(`body > button`, chromedp.NodeVisible),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** Click done")
-			return nil
-		}),
-	); err != nil && !strings.Contains(err.Error(), "net::ERR_ABORTED") {
-		// Note: Ignoring the net::ERR_ABORTED page error is essential here
-		// since downloads will cause this error to be emitted, although the
-		// download will still succeed.
-		return nil, err
-	}
-	log.Println("save to png started...", scrapItem._id)
-	chTimeout := make(chan struct{})
-	timeout := 30 * time.Second
-	time.AfterFunc(timeout, func() {
-		chTimeout <- struct{}{}
-		close(chTimeout)
-	})
-	// This will block until the chromedp listener closes the channel
-loop:
-	for {
-		select {
-		case guid := <-done:
-			srcpath := filepath.Join(wd, guid)
-			destPath := util.GetChartPNGFullFileName(scrapItem._id)
-			log.Printf("wrote %s", srcpath)
-			if err := os.Rename(srcpath, destPath); err != nil {
-				return nil, err
-			}
-			log.Println("source file moved to ", destPath)
-			scrapItem._png_name = util.GetChartPNGFileNameOnly(scrapItem._id)
-			scrapItem._png_path = destPath
-			break loop
-		case <-cr:
-			log.Println("stop because service shutdown")
-			break loop
-		case <-chTimeout:
-			log.Println("Timeout on save to png, something was blocked")
-			break loop
-		}
-	}
-	//fmt.Println("*** png scrapItem ", scrapItem)
-	return scrapItem, nil
 }
 
 func (sc *Scrap) ReportProcessed() string {
-	svg_count := 0
 	png_count := 0
-	err_on_svg := 0
+	err_on_scrap := 0
 	for _, item := range sc._svgs {
 		if item._err != nil {
-			err_on_svg += 1
+			err_on_scrap += 1
 			continue
-		}
-		if item._svg_name != "" {
-			svg_count += 1
 		}
 		if item._png_name != "" {
 			png_count += 1
 		}
 		//fmt.Println("*** item ", *item)
 	}
-	err_on_png := svg_count - png_count
-	return fmt.Sprintf("processed %d, svg %d, png %d, png errors %d, svg errors %d",
-		len(sc._svgs), svg_count, png_count, err_on_png, err_on_svg)
+	return fmt.Sprintf("processed %d, png %d, png errors %d",
+		len(sc._svgs), png_count, err_on_scrap)
 }

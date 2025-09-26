@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/scraper/main.go",
-            "args": ["-limit", "1", "-noautofinish"]
+            "args": ["-limit", "1"]
         }
     ]
 }
