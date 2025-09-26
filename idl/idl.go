@@ -4,7 +4,7 @@ import "github.com/aaaasmile/crawler/db"
 
 var (
 	Appname = "Chart Crawler"
-	Buildnr = "0.3.20230422-00"
+	Buildnr = "0.4.20250926-00"
 )
 
 type ChartInfo struct {

@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/aaaasmile/crawler/idl"
 	"github.com/aaaasmile/crawler/scraper/scrap"
 	"github.com/aaaasmile/crawler/scraper/web"
 )
@@ -14,6 +17,7 @@ import (
 // -screenshot if you want to capture the browser
 func main() {
 	start := time.Now()
+	var ver = flag.Bool("ver", false, "Prints the current version")
 	var skipscrap = flag.Bool("skipscrap", false, "skip scrap if defined")
 	var noautofinish = flag.Bool("noautofinish", false, "avoid termination when all scraps anconversions are finished (to inspect the web server)")
 	var skipsave = flag.Bool("skipsave", false, "skip save to png if defined")
@@ -22,6 +26,11 @@ func main() {
 	var screenshot = flag.Bool("screenshot", false, "take a screenshot of the chart page")
 	var cookie = flag.Bool("cookie", true, "expect cookie to click away")
 	flag.Parse()
+	if *ver {
+		fmt.Printf("%s  version %s", idl.Appname, idl.Buildnr)
+		os.Exit(0)
+	}
+
 	stopch := make(chan struct{})
 	msgch := make(chan string)
 

@@ -16,14 +16,16 @@ import (
 )
 
 const (
-	sel_6month      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3) > input[type=radio]`
-	sel_svgnode     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div > div`
-	sel_spinner     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div.chart-container > div.loading-overlay.center-spinner`
+	// following selectors are all inside the chart. They can change, so you have to inspect it inside the browser and copy the selector
+	sel_6month      = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(3)`
+	sel_1year       = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.btn-group.btn-group-toggle.btn-group-left.chart-level-buttons > label:nth-child(4)`
+	sel_svgnode     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.chart-container`
+	sel_spinner     = `body > div.page-content > main > article > div:nth-child(3) > section:nth-child(1) > div.card-body > div > div.chart-container > div.loading-overlay.center-spinner`
 	cookie_selector = `#onetrust-accept-btn-handler`
 )
 
 const (
-	service_svgtopng = "http://localhost:5903/svg/"
+	service_svgtopng = "http://127.0.0.1:5903/svg/"
 )
 
 type ScrapItem struct {
@@ -147,7 +149,7 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 			}
 			fmt.Println("*** footer ok")
 			if err := chromedp.WaitReady(sel_spinner, chromedp.NodeNotVisible).Do(ctx); err != nil {
-				log.Println("[scrapItem] error on visible footer")
+				log.Println("[scrapItem] error on sel_spinner")
 				return err
 			}
 			fmt.Println("*** initial spinner invisible")
@@ -188,16 +190,16 @@ func (sc *Scrap) scrapItem(charturl string, id int) error {
 	log.Println("[scrapItem] continue")
 	err = chromedp.Run(pageCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			fmt.Println("*** select 6 month")
-			if err := chromedp.WaitVisible(sel_6month, chromedp.NodeVisible).Do(ctx); err != nil {
-				log.Println("[scrapItem] error sel_6month")
+			fmt.Println("*** select 1 year")
+			if err := chromedp.WaitVisible(sel_1year, chromedp.NodeVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error sel_1year")
 				return err
 			}
-			if err := chromedp.Click(sel_6month, chromedp.NodeVisible).Do(ctx); err != nil {
-				log.Println("[scrapItem] error click sel_6month")
+			if err := chromedp.Click(sel_1year, chromedp.NodeVisible).Do(ctx); err != nil {
+				log.Println("[scrapItem] error click sel_1year")
 				return err
 			}
-			fmt.Println("*** Click 6-month done")
+			fmt.Println("*** Click sel_1year done")
 			if err := chromedp.WaitReady(sel_svgnode, chromedp.NodeVisible).Do(ctx); err != nil {
 				log.Println("[scrapItem] error on svg visible")
 				return err
